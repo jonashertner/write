@@ -332,7 +332,7 @@
         showUI();
         if (e.key === 'Enter') {
           playSound('return');
-        } else if (e.key === ' ') {
+        } else if (e.key === ' ' || e.key === 'Backspace') {
           playSound('space');
         } else if (e.key.length === 1) {
           playSound('key');

@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>write</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#FFFFFF">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -72,6 +76,34 @@
         --stats-gap: 16px;
       }
     }
+    
+    /* iOS-specific fixes */
+    @supports (-webkit-touch-callout: none) {
+      html, body, #root {
+        min-height: -webkit-fill-available;
+      }
+    }
+    
+    /* Prevent pull-to-refresh and unwanted gestures on mobile */
+    body {
+      overscroll-behavior: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    
+    /* Allow text selection in textarea */
+    textarea {
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: pan-y;
+    }
+    
+    /* Safe area padding for notched devices */
+    @supports (padding: env(safe-area-inset-top)) {
+      .safe-area-top { padding-top: env(safe-area-inset-top); }
+      .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    }
   </style>
 </head>
 <body>
@@ -126,6 +158,154 @@
           }
         } catch (e) {}
       }, [sound]);
+
+      // Save text to library
+      const saveToLibrary = (textContent, stats) => {
+        const newText = {
+          id: Date.now(),
+          content: textContent,
+          date: new Date().toISOString(),
+          wordCount: stats.wordCount,
+          charCount: stats.charCount,
+          duration: stats.duration,
+          wpm: stats.wpm
+        };
+        const updated = [...savedTexts, newText];
+        setSavedTexts(updated);
+        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+      };
+
+      // Export functions
+      const exportAsTxt = (texts) => {
+        const combined = texts.map((t, i) => {
+          const date = new Date(t.date).toLocaleDateString();
+          return `--- Entry ${i + 1} (${date}) ---\n${t.wordCount} words\n\n${t.content}\n`;
+        }).join('\n\n');
+        const blob = new Blob([combined], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `writings-${new Date().toISOString().slice(0,10)}.txt`;
+        a.click();
+      };
+
+      const exportAsPdf = async (texts) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height;
+        const pageWidth = doc.internal.pageSize.width;
+        const margin = 20;
+        const lineHeight = 7;
+        let y = margin;
+        let pageNum = 1;
+
+        const addPageNumber = () => {
+          doc.setFontSize(10);
+          doc.setTextColor(150);
+          doc.text(String(pageNum), pageWidth / 2, pageHeight - 10, { align: 'center' });
+          doc.setTextColor(0);
+        };
+
+        const checkNewPage = () => {
+          if (y > pageHeight - margin - 20) {
+            addPageNumber();
+            doc.addPage();
+            pageNum++;
+            y = margin;
+          }
+        };
+
+        texts.forEach((t, i) => {
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          const date = new Date(t.date).toLocaleDateString();
+          doc.text(`Entry ${i + 1} - ${date}`, margin, y);
+          y += lineHeight;
+          
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'normal');
+          doc.setTextColor(100);
+          doc.text(`${t.wordCount} words`, margin, y);
+          doc.setTextColor(0);
+          y += lineHeight * 1.5;
+
+          doc.setFontSize(11);
+          const lines = doc.splitTextToSize(t.content, pageWidth - margin * 2);
+          lines.forEach(line => {
+            checkNewPage();
+            doc.text(line, margin, y);
+            y += lineHeight;
+          });
+          y += lineHeight * 2;
+          checkNewPage();
+        });
+
+        addPageNumber();
+        doc.save(`writings-${new Date().toISOString().slice(0,10)}.pdf`);
+      };
+
+      const exportAsDocx = async (texts) => {
+        const { Document, Packer, Paragraph, TextRun, Footer, AlignmentType, PageNumber } = docx;
+        
+        const children = [];
+        texts.forEach((t, i) => {
+          const date = new Date(t.date).toLocaleDateString();
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: `Entry ${i + 1} - ${date}`, bold: true, size: 28 })]
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `${t.wordCount} words`, size: 20, color: '666666' })]
+            }),
+            new Paragraph({ children: [] })
+          );
+          t.content.split('\n').forEach(para => {
+            children.push(new Paragraph({ children: [new TextRun({ text: para, size: 24 })] }));
+          });
+          children.push(new Paragraph({ children: [] }), new Paragraph({ children: [] }));
+        });
+
+        const doc = new Document({
+          sections: [{
+            properties: {},
+            footers: {
+              default: new Footer({
+                children: [new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: [new TextRun({ children: [PageNumber.CURRENT] })]
+                })]
+              })
+            },
+            children
+          }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, `writings-${new Date().toISOString().slice(0,10)}.docx`);
+      };
+
+      // Delete functions
+      const deleteSelected = () => {
+        const updated = savedTexts.filter(t => !selectedTexts.includes(t.id));
+        setSavedTexts(updated);
+        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        setSelectedTexts([]);
+      };
+
+      const deleteAll = () => {
+        setSavedTexts([]);
+        localStorage.setItem('write_saved_texts', JSON.stringify([]));
+        setSelectedTexts([]);
+      };
+
+      const toggleSelect = (id) => {
+        setSelectedTexts(prev => 
+          prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+      };
+
+      const selectAll = () => {
+        setSelectedTexts(savedTexts.map(t => t.id));
+      };
 
       const themes = {
         light: { bg: '#FFFFFF', text: '#111111', muted: '#767676', subtle: '#EBEBEB', accent: '#111111', name: 'Light' },
@@ -184,7 +364,7 @@
         showUI();
         if (e.key === 'Enter') {
           playSound('return');
-        } else if (e.key === ' ') {
+        } else if (e.key === ' ' || e.key === 'Backspace') {
           playSound('space');
         } else if (e.key.length === 1) {
           playSound('key');
@@ -193,8 +373,22 @@
 
       const enterFullScreen = () => {
         const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        // iOS doesn't support fullscreen API, just proceed
+        if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+        // Scroll to hide address bar on mobile
+        window.scrollTo(0, 1);
+      };
+      
+      const exitFullScreen = () => {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
       };
 
       const begin = () => {
@@ -541,7 +735,7 @@
                     localStorage.removeItem('write_draft'); 
                     setText(''); 
                     setView('home'); 
-                    if (document.exitFullscreen) document.exitFullscreen();
+                    exitFullScreen();
                   }}
                 ].map((btn, i) => (
                   <button
@@ -747,6 +941,7 @@
             boxSizing: 'border-box'
           }}
           onMouseMove={showUI}
+          onTouchStart={showUI}
         >
           <style>{`
             ::selection { background: ${th.accent}18; }
@@ -756,6 +951,36 @@
             .editor::-webkit-scrollbar-track { background: transparent; }
             .editor::-webkit-scrollbar-thumb { background: ${th.subtle}; border-radius: 3px; }
           `}</style>
+
+          {/* Subtle escape button - top left corner */}
+          <button
+            onClick={() => { exitFullScreen(); setView('done'); }}
+            style={{
+              position: 'fixed',
+              top: 'env(safe-area-inset-top, 12px)',
+              left: '12px',
+              marginTop: '12px',
+              width: '32px',
+              height: '32px',
+              background: 'transparent',
+              border: 'none',
+              color: th.muted,
+              opacity: uiVisible ? 0.4 : 0,
+              cursor: 'pointer',
+              transition: 'opacity 0.4s ease',
+              fontSize: '18px',
+              fontWeight: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              padding: 0,
+              WebkitTapHighlightColor: 'transparent'
+            }}
+            aria-label="Exit"
+          >
+            ×
+          </button>
 
           <header style={{
             width: '100%',

@@ -751,14 +751,30 @@
         }
       };
 
-      // Fullscreen API removed - causes layout issues on mobile
-      // App uses CSS to fill viewport naturally instead
-      const enterFullScreen = () => {};
-      const exitFullScreen = () => {};
+      // Fullscreen only on desktop - causes layout issues on mobile
+      const enterFullScreen = () => {
+        if (isMobile) return; // Skip on mobile
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      };
+
+      const exitFullScreen = () => {
+        if (isMobile) return; // Skip on mobile
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      };
 
       const begin = () => {
         setStarted(Date.now());
         if (goal.type === 'time') setTimeLeft(goal.value * 60);
+        enterFullScreen();
         setView('write');
         setTimeout(() => editorRef.current?.focus(), 80);
       };

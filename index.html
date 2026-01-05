@@ -509,7 +509,8 @@
         setText(t.content);
         setView('write');
         setStarted(Date.now());
-        setTimeout(() => editorRef.current?.focus({ preventScroll: true }), 80);
+        // Only auto-focus on desktop - on mobile let user tap to focus
+        if (!isMobile) setTimeout(() => editorRef.current?.focus({ preventScroll: true }), 80);
       };
 
       const saveEditedEntry = () => {
@@ -796,7 +797,8 @@
         if (goal.type === 'time') setTimeLeft(goal.value * 60);
         enterFullScreen();
         setView('write');
-        setTimeout(() => editorRef.current?.focus({ preventScroll: true }), 80);
+        // Only auto-focus on desktop - on mobile let user tap to focus
+        if (!isMobile) setTimeout(() => editorRef.current?.focus({ preventScroll: true }), 80);
       };
 
       const fmt = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;

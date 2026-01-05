@@ -1006,36 +1006,6 @@
             .editor::-webkit-scrollbar-thumb { background: ${th.subtle}; border-radius: 3px; }
           `}</style>
 
-          {/* Subtle escape button - top left corner */}
-          <button
-            onClick={() => { exitFullScreen(); setView('done'); }}
-            style={{
-              position: 'fixed',
-              top: 'env(safe-area-inset-top, 12px)',
-              left: '12px',
-              marginTop: '12px',
-              width: '32px',
-              height: '32px',
-              background: 'transparent',
-              border: 'none',
-              color: th.muted,
-              opacity: uiVisible ? 0.4 : 0,
-              cursor: 'pointer',
-              transition: 'opacity 0.4s ease',
-              fontSize: '18px',
-              fontWeight: 300,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-              padding: 0,
-              WebkitTapHighlightColor: 'transparent'
-            }}
-            aria-label="Exit"
-          >
-            ×
-          </button>
-
           <header style={{
             width: '100%',
             maxWidth: 'var(--max-width-write)',
@@ -1056,7 +1026,32 @@
               color: th.muted,
               marginBottom: '20px'
             }}>
-              <span>{goal.type === 'time' ? fmt(timeLeft) : `${wordCount} / ${goal.value}`}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={() => { exitFullScreen(); setView('done'); }}
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: th.muted,
+                    opacity: 0.5,
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 300,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                    marginLeft: '-4px',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                  aria-label="Exit"
+                >
+                  ×
+                </button>
+                <span>{goal.type === 'time' ? fmt(timeLeft) : `${wordCount} / ${goal.value}`}</span>
+              </div>
               <span>{wordCount} words · {text.length} chars</span>
             </div>
             <div style={{ height: '2px', background: th.subtle, borderRadius: '1px' }}>

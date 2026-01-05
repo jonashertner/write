@@ -574,7 +574,7 @@
             boxSizing: 'border-box',
             overflow: 'auto'
           }}>
-            <style>{\`::selection { background: \${th.accent}18; }\`}</style>
+            <style>{`::selection { background: ${th.accent}18; }`}</style>
 
             <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--gap-medium)' }}>
@@ -591,7 +591,7 @@
                   style={{
                     ...buttonBase,
                     background: 'transparent',
-                    border: \`1px solid \${th.subtle}\`,
+                    border: `1px solid ${th.subtle}`,
                     color: th.muted,
                     padding: '8px 16px'
                   }}
@@ -632,12 +632,12 @@
                         key={t.id}
                         onClick={() => toggleSelect(t.id)}
                         style={{
-                          border: \`1px solid \${selectedTexts.includes(t.id) ? th.text : th.subtle}\`,
+                          border: `1px solid ${selectedTexts.includes(t.id) ? th.text : th.subtle}`,
                           borderRadius: '8px',
                           padding: '16px',
                           cursor: 'pointer',
                           transition: 'border-color 0.2s',
-                          background: selectedTexts.includes(t.id) ? \`\${th.text}08\` : 'transparent'
+                          background: selectedTexts.includes(t.id) ? `${th.text}08` : 'transparent'
                         }}
                       >
                         <div style={{ 
@@ -672,7 +672,7 @@
                   </div>
 
                   <div style={{ 
-                    borderTop: \`1px solid \${th.subtle}\`, 
+                    borderTop: `1px solid ${th.subtle}`, 
                     paddingTop: 'var(--gap-medium)',
                     display: 'flex',
                     flexDirection: 'column',
@@ -687,7 +687,7 @@
                       color: th.muted,
                       marginBottom: '4px'
                     }}>
-                      Export {selectedTexts.length > 0 ? \`(\${selectedTexts.length} selected)\` : '(all)'}
+                      Export {selectedTexts.length > 0 ? `(${selectedTexts.length} selected)` : '(all)'}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button onClick={() => exportAsTxt(textsToExport)} style={secondaryButton}>TXT</button>

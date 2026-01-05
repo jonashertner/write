@@ -279,50 +279,53 @@
           const Paragraph = docxLib.Paragraph;
           const TextRun = docxLib.TextRun;
           const PageBreak = docxLib.PageBreak;
-          
+          const Footer = docxLib.Footer;
+          const PageNumber = docxLib.PageNumber;
+          const AlignmentType = docxLib.AlignmentType;
+
           const children = [];
-          
+
           texts.forEach((t, i) => {
-            const date = new Date(t.date).toLocaleDateString('en-US', { 
-              year: 'numeric', month: 'long', day: 'numeric' 
+            const date = new Date(t.date).toLocaleDateString('en-US', {
+              year: 'numeric', month: 'long', day: 'numeric'
             });
-            
+
             // Add page break between entries (except first)
             if (i > 0) {
               children.push(new Paragraph({
                 children: [new PageBreak()]
               }));
             }
-            
+
             // Date header
             children.push(new Paragraph({
               spacing: { after: 120 },
-              children: [new TextRun({ 
-                text: date.toUpperCase(), 
+              children: [new TextRun({
+                text: date.toUpperCase(),
                 size: 18,
                 color: '888888'
               })]
             }));
-            
+
             // Word count
             children.push(new Paragraph({
               spacing: { after: 400 },
-              children: [new TextRun({ 
-                text: t.wordCount + ' words', 
-                size: 18, 
+              children: [new TextRun({
+                text: t.wordCount + ' words',
+                size: 18,
                 color: '888888'
               })]
             }));
-            
+
             // Body paragraphs
             const paragraphs = t.content.split('\n');
             paragraphs.forEach(para => {
               children.push(new Paragraph({
-                spacing: { 
+                spacing: {
                   line: 360,
                   after: para.trim() === '' ? 200 : 160
                 },
-                children: [new TextRun({ 
+                children: [new TextRun({
                   text: para || ' ',
                   size: 24
                 })]
@@ -333,7 +336,19 @@
           const doc = new Document({
             sections: [{
               properties: {},
-              children: children
+              children: children,
+              footers: {
+                default: new Footer({
+                  children: [new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                      new TextRun({ children: [PageNumber.CURRENT], size: 18, color: '888888' }),
+                      new TextRun({ text: ' / ', size: 18, color: '888888' }),
+                      new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, color: '888888' })
+                    ]
+                  })]
+                })
+              }
             }]
           });
 

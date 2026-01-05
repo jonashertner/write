@@ -23,28 +23,35 @@
     img, video, iframe { max-width: 100%; height: auto; }
     html {
       height: 100%;
-      height: -webkit-fill-available;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
       overflow-x: hidden;
       overscroll-behavior-x: none;
+      background: #FFF1E5;
     }
     body {
       height: 100%;
-      height: -webkit-fill-available;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
       width: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
       overflow-x: hidden;
       overscroll-behavior: none;
+      background: inherit;
     }
     #root {
       height: 100%;
-      height: -webkit-fill-available;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
       width: 100%;
       overflow: hidden;
       overflow-x: hidden;
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      background: inherit;
     }
 
     :root {
@@ -489,7 +496,7 @@
         setText(t.content);
         setView('write');
         setStarted(Date.now());
-        setTimeout(() => editorRef.current?.focus(), 80);
+        setTimeout(() => editorRef.current?.focus({ preventScroll: true }), 80);
       };
 
       const saveEditedEntry = () => {
@@ -610,8 +617,13 @@
         dark: { bg: '#111111', text: '#F5F5F5', muted: '#888888', subtle: '#282828', accent: '#F5F5F5', name: 'Dark' },
         ft: { bg: '#FFF1E5', text: '#33302E', muted: '#807973', subtle: '#EBD9C8', accent: '#990F3D', name: 'FT' }
       };
-      
+
       const th = themes[theme];
+
+      // Update html background when theme changes to prevent white gaps
+      useEffect(() => {
+        document.documentElement.style.background = th.bg;
+      }, [th.bg]);
       const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
       // Memoized sorted and filtered library texts
@@ -771,7 +783,7 @@
         if (goal.type === 'time') setTimeLeft(goal.value * 60);
         enterFullScreen();
         setView('write');
-        setTimeout(() => editorRef.current?.focus(), 80);
+        setTimeout(() => editorRef.current?.focus({ preventScroll: true }), 80);
       };
 
       const fmt = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;

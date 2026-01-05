@@ -18,9 +18,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { height: 100%; }
-    body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-    #root { height: 100%; }
+    html { height: 100%; height: -webkit-fill-available; }
+    body { height: 100%; height: -webkit-fill-available; margin: 0; padding: 0; overflow: hidden; }
+    #root { height: 100%; height: -webkit-fill-available; }
     
     :root {
       --page-padding: 48px 24px;
@@ -757,6 +757,7 @@
 
       const fullScreen = {
         height: '100%',
+        minHeight: '-webkit-fill-available',
         width: '100%',
         overflow: 'hidden',
         display: 'flex',

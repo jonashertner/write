@@ -127,10 +127,13 @@
     const Write = () => {
       const [view, setView] = useState('home');
       const [text, setText] = useState('');
-      const [goal, setGoal] = useState({ type: 'time', value: 25 });
+      const [goal, setGoal] = useState(() => {
+        const saved = localStorage.getItem('write_goal');
+        return saved ? JSON.parse(saved) : { type: 'time', value: 25 };
+      });
       const [timeLeft, setTimeLeft] = useState(0);
       const [started, setStarted] = useState(null);
-      const [theme, setTheme] = useState('light');
+      const [theme, setTheme] = useState(() => localStorage.getItem('write_theme') || 'light');
       const [sound, setSound] = useState(true);
       const [uiVisible, setUiVisible] = useState(true);
       const [lastSaved, setLastSaved] = useState(null);
@@ -151,6 +154,14 @@
           }
         });
       }, []);
+
+      useEffect(() => {
+        localStorage.setItem('write_theme', theme);
+      }, [theme]);
+
+      useEffect(() => {
+        localStorage.setItem('write_goal', JSON.stringify(goal));
+      }, [goal]);
 
       const playSound = useCallback((type) => {
         if (!sound) return;

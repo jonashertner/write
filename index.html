@@ -813,7 +813,7 @@
               input[type="number"] { -moz-appearance: textfield; }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', padding: '0 8px' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', boxSizing: 'border-box' }}>
               <h1 style={{ 
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -922,7 +922,7 @@
                 letterSpacing: '0.05em',
                 color: th.muted
               }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: isMobile ? '8px' : '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                   {Object.entries(themes).map(([key, value]) => (
                     <button
                       key={key}
@@ -980,7 +980,7 @@
                 {text && (
                   <>
                     <span style={{ color: th.subtle }}>·</span>
-                    <span className="draft-indicator" style={{ color: th.accent }}>Draft: {wordCount} words · {text.length} chars</span>
+                    <span className="draft-indicator" style={{ color: th.accent }}>{isMobile ? `${wordCount}w` : `Draft: ${wordCount} words`}</span>
                   </>
                 )}
               </div>
@@ -1046,7 +1046,7 @@
             <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', boxSizing: 'border-box' }}>
               <h1 style={{
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -1091,15 +1091,16 @@
               <div style={{
                 border: `1px solid ${th.subtle}`,
                 borderRadius: '8px',
-                padding: '16px 20px',
+                padding: isMobile ? '12px' : '16px 20px',
                 marginBottom: 'var(--gap-medium)',
                 maxHeight: '180px',
                 overflow: 'auto',
                 fontFamily: '"Libre Baskerville", Georgia, serif',
-                fontSize: '14px',
+                fontSize: isMobile ? '13px' : '14px',
                 lineHeight: 1.8,
                 whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                boxSizing: 'border-box'
               }}>
                 {text || 'Nothing written.'}
               </div>
@@ -1155,7 +1156,7 @@
             <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', paddingBottom: '40px' }}>
+            <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', paddingBottom: '40px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--gap-medium)' }}>
                 <h1 style={{
                   fontFamily: '"Libre Baskerville", Georgia, serif',
@@ -1273,21 +1274,22 @@
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'flex-start',
+                            gap: '8px',
                             marginBottom: '8px',
                             fontFamily: '"Inter", sans-serif',
-                            fontSize: '10px',
+                            fontSize: isMobile ? '9px' : '10px',
                             fontWeight: 500,
                             letterSpacing: '0.05em',
                             textTransform: 'uppercase',
                             color: th.muted
                           }}>
-                            <div>
-                              <div>{t.pinned ? '★ ' : ''}{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</div>
-                              {t.editedDate && <div style={{ opacity: 0.7, marginTop: '2px' }}>edited {new Date(t.editedDate).toLocaleDateString()} {new Date(t.editedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
+                            <div style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden' }}>
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.pinned ? '★ ' : ''}{new Date(t.date).toLocaleDateString()}{!isMobile && ` ${new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}</div>
+                              {t.editedDate && <div style={{ opacity: 0.7, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>edited {new Date(t.editedDate).toLocaleDateString()}</div>}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>{t.wordCount} words</span>
-                              <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '8px 12px', fontSize: '11px', margin: '-8px -12px -8px 0' }}>Edit</button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                              <span>{t.wordCount}{isMobile ? 'w' : ' words'}</span>
+                              <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '6px 8px', fontSize: '10px', margin: '-6px -8px -6px 0' }}>Edit</button>
                             </div>
                           </div>
                           <div style={{

@@ -23,34 +23,26 @@
     img, video, iframe { max-width: 100%; height: auto; }
     html {
       height: 100%;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
-      overflow-x: hidden;
-      overscroll-behavior-x: none;
+      height: 100dvh;
+      overflow: hidden;
       background: #FFF1E5;
     }
     body {
       height: 100%;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
+      height: 100dvh;
       width: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      overflow-x: hidden;
-      overscroll-behavior: none;
       background: inherit;
     }
     #root {
-      height: 100%;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
-      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       overflow: hidden;
-      overflow-x: hidden;
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      padding-bottom: env(safe-area-inset-bottom);
       background: inherit;
     }
 
@@ -809,18 +801,18 @@
       const ghostButton = { ...buttonBase, background: 'transparent', border: `1px solid ${th.subtle}`, color: th.muted, padding: '10px 18px' };
 
       const fullScreen = {
-        width: '100vw',
-        maxWidth: '100vw',
-        minWidth: '0',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
         height: '100%',
-        minHeight: '100%',
-        minHeight: '-webkit-fill-available',
         overflow: 'hidden',
-        overflowX: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
-        position: 'relative'
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+        paddingBottom: 'env(safe-area-inset-bottom)'
       };
 
       // ═══════════════════ HOME ═══════════════════
@@ -1447,12 +1439,10 @@
             minWidth: 0,
             margin: '0 auto',
             padding: 'var(--header-padding)',
-            paddingTop: isMobile ? 'max(12px, env(safe-area-inset-top))' : undefined,
             opacity: uiVisible ? 1 : 0,
             transition: 'opacity 0.4s ease',
             flexShrink: 0,
-            boxSizing: 'border-box',
-            overflow: 'visible'
+            boxSizing: 'border-box'
           }}>
             <div style={{
               display: 'flex',

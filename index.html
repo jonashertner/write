@@ -8,6 +8,9 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/docx@8.2.0/build/index.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; margin: 0; padding: 0; overflow: hidden; }
@@ -143,6 +146,12 @@
       useEffect(() => {
         const draft = localStorage.getItem('write_draft');
         if (draft) setText(draft);
+        const saved = localStorage.getItem('write_saved_texts');
+        if (saved) setSavedTexts(JSON.parse(saved));
+        
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
       }, []);
 
       useEffect(() => {
@@ -398,6 +407,43 @@
                   </>
                 )}
               </div>
+
+              {savedTexts.length > 0 && (
+                <div style={{ textAlign: 'center', marginTop: 'var(--gap-small)' }}>
+                  <button
+                    onClick={() => setView('library')}
+                    style={{
+                      ...buttonBase,
+                      background: 'transparent',
+                      border: 'none',
+                      color: th.muted,
+                      padding: '8px 16px',
+                      fontSize: '10px'
+                    }}
+                  >
+                    Library ({savedTexts.length})
+                  </button>
+                </div>
+              )}
+
+              {!isMobile && (
+                <div style={{
+                  position: 'fixed',
+                  bottom: '20px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  textAlign: 'center',
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: '9px',
+                  letterSpacing: '0.03em',
+                  color: th.muted,
+                  opacity: 0.6
+                }}>
+                  <div style={{ marginBottom: '4px' }}>
+                    Built with {theme === 'dark' ? '♡' : '♥'} · Your data never leaves your device
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -485,12 +531,8 @@
               <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 {[
                   { label: 'Copy', action: () => navigator.clipboard.writeText(text) },
-                  { label: 'Save', action: () => {
-                    const blob = new Blob([text], { type: 'text/plain' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `writing-${new Date().toISOString().slice(0,10)}.txt`;
-                    a.click();
+                  { label: 'Keep', action: () => {
+                    saveToLibrary(text, { wordCount, charCount: text.length, duration, wpm });
                   }},
                   { label: 'New', primary: true, action: () => { 
                     localStorage.removeItem('write_draft'); 
@@ -510,6 +552,180 @@
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ═══════════════════ LIBRARY ═══════════════════
+      if (view === 'library') {
+        const textsToExport = selectedTexts.length > 0 
+          ? savedTexts.filter(t => selectedTexts.includes(t.id))
+          : savedTexts;
+        
+        return (
+          <div style={{
+            ...fullScreen,
+            background: th.bg,
+            color: th.text,
+            padding: 'var(--page-padding)',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            transition: 'background 0.3s ease',
+            boxSizing: 'border-box',
+            overflow: 'auto'
+          }}>
+            <style>{\`::selection { background: \${th.accent}18; }\`}</style>
+
+            <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--gap-medium)' }}>
+                <h1 style={{
+                  fontFamily: '"Libre Baskerville", Georgia, serif',
+                  fontSize: 'var(--title-size)',
+                  fontWeight: 400,
+                  fontStyle: 'italic'
+                }}>
+                  Library
+                </h1>
+                <button
+                  onClick={() => setView('home')}
+                  style={{
+                    ...buttonBase,
+                    background: 'transparent',
+                    border: \`1px solid \${th.subtle}\`,
+                    color: th.muted,
+                    padding: '8px 16px'
+                  }}
+                >
+                  Back
+                </button>
+              </div>
+
+              {savedTexts.length === 0 ? (
+                <div style={{ textAlign: 'center', color: th.muted, padding: 'var(--gap-large) 0' }}>
+                  <p style={{ fontFamily: '"Libre Baskerville", Georgia, serif', fontStyle: 'italic' }}>
+                    No saved writings yet
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '8px', 
+                    marginBottom: 'var(--gap-small)', 
+                    flexWrap: 'wrap',
+                    fontFamily: '"Inter", sans-serif',
+                    fontSize: '10px'
+                  }}>
+                    <button onClick={selectAll} style={{ ...ghostButton, padding: '6px 12px', fontSize: '10px' }}>
+                      Select All
+                    </button>
+                    {selectedTexts.length > 0 && (
+                      <button onClick={() => setSelectedTexts([])} style={{ ...ghostButton, padding: '6px 12px', fontSize: '10px' }}>
+                        Deselect
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--gap-medium)' }}>
+                    {savedTexts.map(t => (
+                      <div 
+                        key={t.id}
+                        onClick={() => toggleSelect(t.id)}
+                        style={{
+                          border: \`1px solid \${selectedTexts.includes(t.id) ? th.text : th.subtle}\`,
+                          borderRadius: '8px',
+                          padding: '16px',
+                          cursor: 'pointer',
+                          transition: 'border-color 0.2s',
+                          background: selectedTexts.includes(t.id) ? \`\${th.text}08\` : 'transparent'
+                        }}
+                      >
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          marginBottom: '8px',
+                          fontFamily: '"Inter", sans-serif',
+                          fontSize: '10px',
+                          fontWeight: 500,
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          color: th.muted
+                        }}>
+                          <span>{new Date(t.date).toLocaleDateString()}</span>
+                          <span>{t.wordCount} words</span>
+                        </div>
+                        <div style={{
+                          fontFamily: '"Libre Baskerville", Georgia, serif',
+                          fontSize: '14px',
+                          lineHeight: 1.6,
+                          color: th.text,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical'
+                        }}>
+                          {t.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ 
+                    borderTop: \`1px solid \${th.subtle}\`, 
+                    paddingTop: 'var(--gap-medium)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <div style={{
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: th.muted,
+                      marginBottom: '4px'
+                    }}>
+                      Export {selectedTexts.length > 0 ? \`(\${selectedTexts.length} selected)\` : '(all)'}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button onClick={() => exportAsTxt(textsToExport)} style={secondaryButton}>TXT</button>
+                      <button onClick={() => exportAsPdf(textsToExport)} style={secondaryButton}>PDF</button>
+                      <button onClick={() => exportAsDocx(textsToExport)} style={secondaryButton}>DOCX</button>
+                    </div>
+
+                    <div style={{
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: th.muted,
+                      marginTop: '8px',
+                      marginBottom: '4px'
+                    }}>
+                      Delete
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {selectedTexts.length > 0 && (
+                        <button 
+                          onClick={deleteSelected} 
+                          style={{ ...ghostButton, borderColor: '#c00', color: '#c00' }}
+                        >
+                          Delete Selected
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => { if(confirm('Delete all writings?')) deleteAll(); }} 
+                        style={{ ...ghostButton, borderColor: '#c00', color: '#c00' }}
+                      >
+                        Delete All
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );

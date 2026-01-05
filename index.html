@@ -141,6 +141,8 @@
       const [selectedTexts, setSelectedTexts] = useState([]);
       const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
       const [swipeState, setSwipeState] = useState({});
+      const [editingId, setEditingId] = useState(null);
+      const [editText, setEditText] = useState('');
       const touchStart = useRef({});
       
       const editorRef = useRef(null);
@@ -403,6 +405,27 @@
         );
         setSavedTexts(updated);
         localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+      };
+
+      const startEdit = (t) => {
+        setEditingId(t.id);
+        setEditText(t.content);
+      };
+
+      const saveEdit = (id) => {
+        const wordCount = editText.trim() ? editText.trim().split(/\s+/).length : 0;
+        const updated = savedTexts.map(t =>
+          t.id === id ? { ...t, content: editText, wordCount, editedDate: new Date().toISOString() } : t
+        );
+        setSavedTexts(updated);
+        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        setEditingId(null);
+        setEditText('');
+      };
+
+      const cancelEdit = () => {
+        setEditingId(null);
+        setEditText('');
       };
 
       const handleTouchStart = (id, e) => {
@@ -991,18 +1014,19 @@
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--gap-medium)' }}>
-                    {[...savedTexts].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.date) - new Date(a.date)).map(t => (
+                    {[...savedTexts].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.editedDate || b.date) - new Date(a.editedDate || a.date)).map(t => (
                       <div
                         key={t.id}
-                        onTouchStart={(e) => handleTouchStart(t.id, e)}
-                        onTouchMove={(e) => handleTouchMove(t.id, e)}
-                        onTouchEnd={() => handleTouchEnd(t.id)}
-                        onClick={() => !swipeState[t.id] && toggleSelect(t.id)}
+                        onTouchStart={(e) => editingId !== t.id && handleTouchStart(t.id, e)}
+                        onTouchMove={(e) => editingId !== t.id && handleTouchMove(t.id, e)}
+                        onTouchEnd={() => editingId !== t.id && handleTouchEnd(t.id)}
+                        onClick={() => !swipeState[t.id] && editingId !== t.id && toggleSelect(t.id)}
+                        onDoubleClick={() => startEdit(t)}
                         style={{
-                          border: `1px solid ${selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
+                          border: `1px solid ${editingId === t.id ? th.accent : selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
                           borderRadius: '8px',
                           padding: '16px',
-                          cursor: 'pointer',
+                          cursor: editingId === t.id ? 'default' : 'pointer',
                           transition: swipeState[t.id] ? 'none' : 'transform 0.2s, border-color 0.2s',
                           transform: `translateX(${swipeState[t.id] || 0}px)`,
                           background: swipeState[t.id] < -40 ? '#c0000015' : swipeState[t.id] > 40 ? `${th.accent}15` : selectedTexts.includes(t.id) ? `${th.text}08` : 'transparent',
@@ -1012,6 +1036,7 @@
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
+                          alignItems: 'flex-start',
                           marginBottom: '8px',
                           fontFamily: '"Inter", sans-serif',
                           fontSize: '10px',
@@ -1020,22 +1045,57 @@
                           textTransform: 'uppercase',
                           color: th.muted
                         }}>
-                          <span>{t.pinned ? '★ ' : ''}{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</span>
-                          <span>{t.wordCount} words</span>
+                          <div>
+                            <div>{t.pinned ? '★ ' : ''}{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</div>
+                            {t.editedDate && <div style={{ opacity: 0.7, marginTop: '2px' }}>edited {new Date(t.editedDate).toLocaleDateString()} {new Date(t.editedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{t.wordCount} words</span>
+                            {editingId !== t.id && <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '2px', fontSize: '10px' }}>Edit</button>}
+                          </div>
                         </div>
-                        <div style={{
-                          fontFamily: '"Libre Baskerville", Georgia, serif',
-                          fontSize: '14px',
-                          lineHeight: 1.6,
-                          color: th.text,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical'
-                        }}>
-                          {t.content}
-                        </div>
+                        {editingId === t.id ? (
+                          <div>
+                            <textarea
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                minHeight: '120px',
+                                fontFamily: '"Libre Baskerville", Georgia, serif',
+                                fontSize: '14px',
+                                lineHeight: 1.6,
+                                color: th.text,
+                                background: 'transparent',
+                                border: `1px solid ${th.subtle}`,
+                                borderRadius: '4px',
+                                padding: '8px',
+                                resize: 'vertical',
+                                outline: 'none'
+                              }}
+                              autoFocus
+                            />
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                              <button onClick={(e) => { e.stopPropagation(); cancelEdit(); }} style={{ ...ghostButton, padding: '6px 12px', fontSize: '10px' }}>Cancel</button>
+                              <button onClick={(e) => { e.stopPropagation(); saveEdit(t.id); }} style={{ ...primaryButton, padding: '6px 12px', fontSize: '10px' }}>Save</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            fontFamily: '"Libre Baskerville", Georgia, serif',
+                            fontSize: '14px',
+                            lineHeight: 1.6,
+                            color: th.text,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {t.content}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

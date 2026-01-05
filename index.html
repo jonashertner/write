@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>write</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✎</text></svg>">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -108,7 +108,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
     const SOUNDS = {
       key: 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//OAwAAAAAAAAAAAAEluZm8AAAAPAAAADgAADD0AISEhISEhITMzMzMzMzNEREREREREVVVVVVVVVWZmZmZmZmZ3d3d3d3d3iIiIiIiIiJmZmZmZmZmZqqqqqqqqqru7u7u7u7vMzMzMzMzM3d3d3d3d3e7u7u7u7u7/////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQDaQAAAAAAAAw9rpdX3wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/zgMQAAAADSAAAAABMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/84LEOwAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zgsQ7AAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVfAENgdfjsgB3UIGDD+Fp6X2AGAAYIUAwQ/D2QtbBvB+0G/h7wdIDbD63TUwbYMwBImIiAUP/t+BjDwG//OCxDsAAANIAUAAAJCAyoaaHLi5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',
@@ -135,6 +135,7 @@
       const [swipeState, setSwipeState] = useState({});
       const [editingEntryId, setEditingEntryId] = useState(null);
       const [notification, setNotification] = useState(null);
+      const [searchQuery, setSearchQuery] = useState('');
       const touchStart = useRef({});
 
       // Safe localStorage helper with quota handling
@@ -478,24 +479,27 @@
 
       const handleTouchMove = (id, e) => {
         if (!touchStart.current[id]) return;
-        const diffX = e.touches[0].clientX - touchStart.current[id].x;
-        const diffY = Math.abs(e.touches[0].clientY - touchStart.current[id].y);
+        const touch = e.touches[0];
+        const diffX = touch.clientX - touchStart.current[id].x;
+        const diffY = Math.abs(touch.clientY - touchStart.current[id].y);
         // Only swipe horizontally if not scrolling vertically
-        if (diffY < 30) {
+        if (diffY < 30 && Math.abs(diffX) > 5) {
           setSwipeState(prev => ({ ...prev, [id]: diffX }));
         }
       };
 
       const handleTouchEnd = (id) => {
         const diff = swipeState[id] || 0;
-        if (diff > 80) {
+        if (diff > 50) {
           togglePin(id);
         }
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
         delete touchStart.current[id];
       };
 
-      // Mouse swipe support for desktop
+      // Mouse swipe support for desktop (throttled)
+      const rafRef = useRef({});
+
       const handleMouseDown = (id, e) => {
         touchStart.current[id] = { x: e.clientX, y: e.clientY, isMouseDown: true, swiping: false };
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
@@ -503,22 +507,25 @@
 
       const handleMouseMove = (id, e) => {
         if (!touchStart.current[id]?.isMouseDown) return;
-        const diffX = e.clientX - touchStart.current[id].x;
-        const diffY = Math.abs(e.clientY - touchStart.current[id].y);
-        // Only swipe horizontally if not scrolling vertically
-        if (diffY < 30 && Math.abs(diffX) > 5) {
-          touchStart.current[id].swiping = true;
-          setSwipeState(prev => ({ ...prev, [id]: diffX }));
-        } else if (!touchStart.current[id].swiping) {
-          // Allow vertical scrolling
-          setSwipeState(prev => ({ ...prev, [id]: 0 }));
-        }
+        if (rafRef.current[id]) return; // Throttle with RAF
+
+        rafRef.current[id] = requestAnimationFrame(() => {
+          const diffX = e.clientX - touchStart.current[id].x;
+          const diffY = Math.abs(e.clientY - touchStart.current[id].y);
+          if (diffY < 30 && Math.abs(diffX) > 5) {
+            touchStart.current[id].swiping = true;
+            setSwipeState(prev => ({ ...prev, [id]: diffX }));
+          } else if (!touchStart.current[id].swiping) {
+            setSwipeState(prev => ({ ...prev, [id]: 0 }));
+          }
+          rafRef.current[id] = null;
+        });
       };
 
       const handleMouseUp = (id) => {
         if (!touchStart.current[id]?.isMouseDown) return;
         const diff = swipeState[id] || 0;
-        if (diff > 80) {
+        if (diff > 50) {
           togglePin(id);
         }
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
@@ -556,6 +563,17 @@
       
       const th = themes[theme];
       const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+      // Memoized sorted and filtered library texts
+      const sortedTexts = useMemo(() => {
+        const filtered = searchQuery
+          ? savedTexts.filter(t => t.content.toLowerCase().includes(searchQuery.toLowerCase()))
+          : savedTexts;
+        return [...filtered].sort((a, b) =>
+          (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+          new Date(b.editedDate || b.date) - new Date(a.editedDate || a.date)
+        );
+      }, [savedTexts, searchQuery]);
 
       // Notification component
       const Notification = () => notification && (
@@ -1117,6 +1135,28 @@
                 </button>
               </div>
 
+              {savedTexts.length > 3 && (
+                <div style={{ marginBottom: 'var(--gap-small)' }}>
+                  <input
+                    type="text"
+                    placeholder="Search writings..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      fontSize: '14px',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      border: `1px solid ${th.subtle}`,
+                      borderRadius: '8px',
+                      background: 'transparent',
+                      color: th.text,
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              )}
+
               {savedTexts.length === 0 ? (
                 <div style={{ textAlign: 'center', color: th.muted, padding: 'var(--gap-large) 0' }}>
                   <p style={{ fontFamily: '"Libre Baskerville", Georgia, serif', fontStyle: 'italic' }}>
@@ -1144,7 +1184,7 @@
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--gap-medium)' }}>
-                    {[...savedTexts].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.editedDate || b.date) - new Date(a.editedDate || a.date)).map(t => (
+                    {sortedTexts.map(t => (
                       <div key={t.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: '8px' }}>
                         {/* Swipe action indicators */}
                         <div style={{
@@ -1203,7 +1243,7 @@
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span>{t.wordCount} words</span>
-                              <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '2px', fontSize: '10px' }}>Edit</button>
+                              <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '8px 12px', fontSize: '11px', margin: '-8px -12px -8px 0' }}>Edit</button>
                             </div>
                           </div>
                           <div style={{
@@ -1333,20 +1373,20 @@
                 <button
                   onClick={() => { exitFullScreen(); editingEntryId ? cancelEdit() : setView('done'); }}
                   style={{
-                    width: '24px',
-                    height: '24px',
+                    width: '44px',
+                    height: '44px',
                     background: 'transparent',
                     border: 'none',
                     color: th.muted,
                     opacity: 0.5,
                     cursor: 'pointer',
-                    fontSize: '16px',
+                    fontSize: '18px',
                     fontWeight: 300,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: 0,
-                    marginLeft: '-4px',
+                    marginLeft: '-12px',
                     WebkitTapHighlightColor: 'transparent'
                   }}
                   aria-label="Exit"
@@ -1416,7 +1456,10 @@
               letterSpacing: '0.05em',
               color: th.muted
             }}>
-              <span>{editingEntryId ? 'Editing entry' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '\u00A0'}</span>
+              <span>
+                {editingEntryId ? 'Editing entry' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '\u00A0'}
+                {!isMobile && !editingEntryId && <span style={{ opacity: 0.6, marginLeft: '12px' }}>⌘↵ to finish</span>}
+              </span>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {editingEntryId ? (
                   <>

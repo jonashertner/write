@@ -191,7 +191,8 @@
         const blob = new Blob([combined], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}.txt`;
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
+        a.download = `writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.txt`;
         a.click();
       };
 
@@ -271,7 +272,8 @@
           addPageNumber(pageNum);
         });
 
-        doc.save(`writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}.pdf`);
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
+        doc.save(`writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.pdf`);
       };
 
       const exportAsDocx = async (texts) => {
@@ -359,7 +361,8 @@
           });
 
           const blob = await Packer.toBlob(doc);
-          saveAs(blob, 'writings-' + new Date().toISOString().slice(0,19).replace(/[T:]/g, '-') + '.docx');
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
+          saveAs(blob, 'writings-' + new Date().toISOString().slice(0,19).replace(/[T:]/g, '-') + '-' + tz + '.docx');
         } catch (err) {
           console.error('DOCX export error:', err);
           alert('DOCX export failed: ' + err.message);
@@ -962,7 +965,7 @@
                           textTransform: 'uppercase',
                           color: th.muted
                         }}>
-                          <span>{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</span>
                           <span>{t.wordCount} words</span>
                         </div>
                         <div style={{

@@ -751,19 +751,19 @@
         }
       };
 
+      // Fullscreen only on desktop - causes layout issues on mobile
       const enterFullScreen = () => {
+        if (isMobile) return; // Skip on mobile
         const el = document.documentElement;
-        // iOS doesn't support fullscreen API, just proceed
         if (el.requestFullscreen) {
           el.requestFullscreen().catch(() => {});
         } else if (el.webkitRequestFullscreen) {
           el.webkitRequestFullscreen();
         }
-        // Scroll to hide address bar on mobile
-        window.scrollTo(0, 1);
       };
-      
+
       const exitFullScreen = () => {
+        if (isMobile) return; // Skip on mobile
         if (document.fullscreenElement && document.exitFullscreen) {
           document.exitFullscreen().catch(() => {});
         } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {

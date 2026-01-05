@@ -141,8 +141,7 @@
       const [selectedTexts, setSelectedTexts] = useState([]);
       const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
       const [swipeState, setSwipeState] = useState({});
-      const [editingId, setEditingId] = useState(null);
-      const [editText, setEditText] = useState('');
+      const [editingEntryId, setEditingEntryId] = useState(null);
       const touchStart = useRef({});
       
       const editorRef = useRef(null);
@@ -408,35 +407,47 @@
       };
 
       const startEdit = (t) => {
-        setEditingId(t.id);
-        setEditText(t.content);
+        setEditingEntryId(t.id);
+        setText(t.content);
+        setView('write');
+        setStarted(Date.now());
+        setTimeout(() => editorRef.current?.focus(), 80);
       };
 
-      const saveEdit = (id) => {
-        const wordCount = editText.trim() ? editText.trim().split(/\s+/).length : 0;
+      const saveEditedEntry = () => {
+        if (!editingEntryId) return;
+        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
         const updated = savedTexts.map(t =>
-          t.id === id ? { ...t, content: editText, wordCount, editedDate: new Date().toISOString() } : t
+          t.id === editingEntryId ? { ...t, content: text, wordCount, editedDate: new Date().toISOString() } : t
         );
         setSavedTexts(updated);
         localStorage.setItem('write_saved_texts', JSON.stringify(updated));
-        setEditingId(null);
-        setEditText('');
+        setEditingEntryId(null);
+        setText('');
+        localStorage.removeItem('write_draft');
+        setView('library');
       };
 
       const cancelEdit = () => {
-        setEditingId(null);
-        setEditText('');
+        setEditingEntryId(null);
+        setText('');
+        localStorage.removeItem('write_draft');
+        setView('library');
       };
 
       const handleTouchStart = (id, e) => {
-        touchStart.current[id] = e.touches[0].clientX;
+        touchStart.current[id] = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
       };
 
       const handleTouchMove = (id, e) => {
-        if (touchStart.current[id] === undefined) return;
-        const diff = e.touches[0].clientX - touchStart.current[id];
-        setSwipeState(prev => ({ ...prev, [id]: diff }));
+        if (!touchStart.current[id]) return;
+        const diffX = e.touches[0].clientX - touchStart.current[id].x;
+        const diffY = Math.abs(e.touches[0].clientY - touchStart.current[id].y);
+        // Only swipe horizontally if not scrolling vertically
+        if (diffY < 30) {
+          setSwipeState(prev => ({ ...prev, [id]: diffX }));
+        }
       };
 
       const handleTouchEnd = (id) => {
@@ -448,6 +459,38 @@
         }
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
         delete touchStart.current[id];
+      };
+
+      // Mouse swipe support for desktop
+      const handleMouseDown = (id, e) => {
+        e.preventDefault();
+        touchStart.current[id] = { x: e.clientX, y: e.clientY, isMouseDown: true };
+        setSwipeState(prev => ({ ...prev, [id]: 0 }));
+      };
+
+      const handleMouseMove = (id, e) => {
+        if (!touchStart.current[id]?.isMouseDown) return;
+        const diffX = e.clientX - touchStart.current[id].x;
+        setSwipeState(prev => ({ ...prev, [id]: diffX }));
+      };
+
+      const handleMouseUp = (id) => {
+        if (!touchStart.current[id]?.isMouseDown) return;
+        const diff = swipeState[id] || 0;
+        if (diff < -80) {
+          deleteEntry(id);
+        } else if (diff > 80) {
+          togglePin(id);
+        }
+        setSwipeState(prev => ({ ...prev, [id]: 0 }));
+        delete touchStart.current[id];
+      };
+
+      const handleMouseLeave = (id) => {
+        if (touchStart.current[id]?.isMouseDown) {
+          setSwipeState(prev => ({ ...prev, [id]: 0 }));
+          delete touchStart.current[id];
+        }
       };
 
       const deleteAll = () => {
@@ -1017,20 +1060,25 @@
                     {[...savedTexts].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.editedDate || b.date) - new Date(a.editedDate || a.date)).map(t => (
                       <div
                         key={t.id}
-                        onTouchStart={(e) => editingId !== t.id && handleTouchStart(t.id, e)}
-                        onTouchMove={(e) => editingId !== t.id && handleTouchMove(t.id, e)}
-                        onTouchEnd={() => editingId !== t.id && handleTouchEnd(t.id)}
-                        onClick={() => !swipeState[t.id] && editingId !== t.id && toggleSelect(t.id)}
+                        onTouchStart={(e) => handleTouchStart(t.id, e)}
+                        onTouchMove={(e) => handleTouchMove(t.id, e)}
+                        onTouchEnd={() => handleTouchEnd(t.id)}
+                        onMouseDown={(e) => handleMouseDown(t.id, e)}
+                        onMouseMove={(e) => handleMouseMove(t.id, e)}
+                        onMouseUp={() => handleMouseUp(t.id)}
+                        onMouseLeave={() => handleMouseLeave(t.id)}
+                        onClick={() => Math.abs(swipeState[t.id] || 0) < 10 && toggleSelect(t.id)}
                         onDoubleClick={() => startEdit(t)}
                         style={{
-                          border: `1px solid ${editingId === t.id ? th.accent : selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
+                          border: `1px solid ${selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
                           borderRadius: '8px',
                           padding: '16px',
-                          cursor: editingId === t.id ? 'default' : 'pointer',
+                          cursor: 'pointer',
                           transition: swipeState[t.id] ? 'none' : 'transform 0.2s, border-color 0.2s',
                           transform: `translateX(${swipeState[t.id] || 0}px)`,
                           background: swipeState[t.id] < -40 ? '#c0000015' : swipeState[t.id] > 40 ? `${th.accent}15` : selectedTexts.includes(t.id) ? `${th.text}08` : 'transparent',
-                          position: 'relative'
+                          position: 'relative',
+                          userSelect: 'none'
                         }}
                       >
                         <div style={{
@@ -1051,51 +1099,22 @@
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>{t.wordCount} words</span>
-                            {editingId !== t.id && <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '2px', fontSize: '10px' }}>Edit</button>}
+                            <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '2px', fontSize: '10px' }}>Edit</button>
                           </div>
                         </div>
-                        {editingId === t.id ? (
-                          <div>
-                            <textarea
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                width: '100%',
-                                minHeight: '120px',
-                                fontFamily: '"Libre Baskerville", Georgia, serif',
-                                fontSize: '14px',
-                                lineHeight: 1.6,
-                                color: th.text,
-                                background: 'transparent',
-                                border: `1px solid ${th.subtle}`,
-                                borderRadius: '4px',
-                                padding: '8px',
-                                resize: 'vertical',
-                                outline: 'none'
-                              }}
-                              autoFocus
-                            />
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
-                              <button onClick={(e) => { e.stopPropagation(); cancelEdit(); }} style={{ ...ghostButton, padding: '6px 12px', fontSize: '10px' }}>Cancel</button>
-                              <button onClick={(e) => { e.stopPropagation(); saveEdit(t.id); }} style={{ ...primaryButton, padding: '6px 12px', fontSize: '10px' }}>Save</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{
-                            fontFamily: '"Libre Baskerville", Georgia, serif',
-                            fontSize: '14px',
-                            lineHeight: 1.6,
-                            color: th.text,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {t.content}
-                          </div>
-                        )}
+                        <div style={{
+                          fontFamily: '"Libre Baskerville", Georgia, serif',
+                          fontSize: '14px',
+                          lineHeight: 1.6,
+                          color: th.text,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical'
+                        }}>
+                          {t.content}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1206,7 +1225,7 @@
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button
-                  onClick={() => { exitFullScreen(); setView('done'); }}
+                  onClick={() => { exitFullScreen(); editingEntryId ? cancelEdit() : setView('done'); }}
                   style={{
                     width: '24px',
                     height: '24px',
@@ -1291,15 +1310,36 @@
               letterSpacing: '0.05em',
               color: th.muted
             }}>
-              <span>{lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '\u00A0'}</span>
-              <button
-                onClick={() => setView('done')}
-                style={ghostButton}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
-              >
-                Finish
-              </button>
+              <span>{editingEntryId ? 'Editing entry' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '\u00A0'}</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {editingEntryId ? (
+                  <>
+                    <button
+                      onClick={cancelEdit}
+                      style={ghostButton}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveEditedEntry}
+                      style={primaryButton}
+                    >
+                      Update
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setView('done')}
+                    style={ghostButton}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
+                  >
+                    Finish
+                  </button>
+                )}
+              </div>
             </div>
           </footer>
         </div>

@@ -191,7 +191,7 @@
         const blob = new Blob([combined], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `writings-${new Date().toISOString().slice(0,10)}.txt`;
+        a.download = `writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}.txt`;
         a.click();
       };
 
@@ -271,7 +271,7 @@
           addPageNumber(pageNum);
         });
 
-        doc.save(`writings-${new Date().toISOString().slice(0,10)}.pdf`);
+        doc.save(`writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}.pdf`);
       };
 
       const exportAsDocx = async (texts) => {
@@ -359,7 +359,7 @@
           });
 
           const blob = await Packer.toBlob(doc);
-          saveAs(blob, 'writings-' + new Date().toISOString().slice(0,10) + '.docx');
+          saveAs(blob, 'writings-' + new Date().toISOString().slice(0,19).replace(/[T:]/g, '-') + '.docx');
         } catch (err) {
           console.error('DOCX export error:', err);
           alert('DOCX export failed: ' + err.message);

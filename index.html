@@ -11,6 +11,64 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    
+    :root {
+      --page-padding: 48px 24px;
+      --max-width-home: 280px;
+      --max-width-write: 680px;
+      --max-width-done: 440px;
+      --title-size: 22px;
+      --goal-value-size: 64px;
+      --stat-value-size: 28px;
+      --editor-font-size: 18px;
+      --editor-padding: 48px 40px;
+      --header-padding: 28px 40px 0;
+      --footer-padding: 0 40px 28px;
+      --gap-large: 56px;
+      --gap-medium: 40px;
+      --gap-small: 16px;
+      --button-padding: 14px 28px;
+      --stats-gap: 36px;
+    }
+    
+    @media (max-width: 768px) {
+      :root {
+        --page-padding: 32px 20px;
+        --max-width-home: 100%;
+        --max-width-write: 100%;
+        --max-width-done: 100%;
+        --title-size: 20px;
+        --goal-value-size: 52px;
+        --stat-value-size: 24px;
+        --editor-font-size: 16px;
+        --editor-padding: 32px 20px;
+        --header-padding: 20px 20px 0;
+        --footer-padding: 0 20px 20px;
+        --gap-large: 40px;
+        --gap-medium: 32px;
+        --gap-small: 12px;
+        --button-padding: 12px 24px;
+        --stats-gap: 24px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      :root {
+        --page-padding: 24px 16px;
+        --title-size: 18px;
+        --goal-value-size: 44px;
+        --stat-value-size: 20px;
+        --editor-font-size: 15px;
+        --editor-padding: 24px 16px;
+        --header-padding: 16px 16px 0;
+        --footer-padding: 0 16px 16px;
+        --gap-large: 32px;
+        --gap-medium: 24px;
+        --gap-small: 10px;
+        --button-padding: 10px 20px;
+        --stats-gap: 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -64,10 +122,9 @@
       }, [sound]);
 
       const themes = {
-        light: { bg: '#FFFFFF', text: '#111111', muted: '#767676', subtle: '#EBEBEB', accent: '#111111' },
-        dark: { bg: '#111111', text: '#F5F5F5', muted: '#888888', subtle: '#282828', accent: '#F5F5F5' },
-        sepia: { bg: '#F8F4EC', text: '#2C2416', muted: '#8C8070', subtle: '#E8E0D0', accent: '#2C2416' },
-        financial: { bg: '#FFF1E5', text: '#33302E', muted: '#807973', subtle: '#EBD9C8', accent: '#990F3D' }
+        light: { bg: '#FFFFFF', text: '#111111', muted: '#767676', subtle: '#EBEBEB', accent: '#111111', name: 'Light' },
+        dark: { bg: '#111111', text: '#F5F5F5', muted: '#888888', subtle: '#282828', accent: '#F5F5F5', name: 'Dark' },
+        ft: { bg: '#FFF1E5', text: '#33302E', muted: '#807973', subtle: '#EBD9C8', accent: '#990F3D', name: 'FT' }
       };
       
       const th = themes[theme];
@@ -150,7 +207,7 @@
         borderRadius: '6px'
       };
 
-      const primaryButton = { ...buttonBase, background: th.text, border: 'none', color: th.bg, padding: '14px 28px' };
+      const primaryButton = { ...buttonBase, background: th.text, border: 'none', color: th.bg, padding: 'var(--button-padding)' };
       const secondaryButton = { ...buttonBase, background: 'transparent', border: `1px solid ${th.text}`, color: th.text, padding: '12px 20px' };
       const ghostButton = { ...buttonBase, background: 'transparent', border: `1px solid ${th.subtle}`, color: th.muted, padding: '10px 18px' };
 
@@ -172,7 +229,7 @@
             color: th.text,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '48px 24px',
+            padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease, color 0.3s ease',
             boxSizing: 'border-box'
@@ -184,19 +241,19 @@
               input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: '280px' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', padding: '0 8px' }}>
               <h1 style={{ 
                 fontFamily: '"Libre Baskerville", Georgia, serif',
-                fontSize: '22px',
+                fontSize: 'var(--title-size)',
                 fontWeight: 400,
                 textAlign: 'center',
-                marginBottom: '56px',
+                marginBottom: 'var(--gap-large)',
                 letterSpacing: '0.01em'
               }}>
                 write
               </h1>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginBottom: '40px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--gap-medium)', marginBottom: 'var(--gap-medium)' }}>
                 {['time', 'words'].map(t => (
                   <button
                     key={t}
@@ -221,10 +278,10 @@
                 ))}
               </div>
 
-              <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <div style={{ textAlign: 'center', marginBottom: 'var(--gap-medium)' }}>
                 <div style={{ 
                   fontFamily: '"Libre Baskerville", Georgia, serif',
-                  fontSize: '64px',
+                  fontSize: 'var(--goal-value-size)',
                   fontWeight: 400,
                   lineHeight: 1,
                   letterSpacing: '-0.02em'
@@ -244,7 +301,7 @@
                 </div>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '56px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--gap-large)' }}>
                 <input
                   type="range"
                   min={goal.type === 'time' ? 5 : 100}
@@ -252,11 +309,11 @@
                   step={goal.type === 'time' ? 5 : 100}
                   value={goal.value}
                   onChange={(e) => setGoal({ ...goal, value: parseInt(e.target.value) })}
-                  style={{ width: '140px' }}
+                  style={{ width: '100%', maxWidth: '200px', minWidth: '120px' }}
                 />
               </div>
 
-              <div style={{ textAlign: 'center', marginBottom: '72px' }}>
+              <div style={{ textAlign: 'center', marginBottom: 'var(--gap-large)' }}>
                 <button
                   onClick={begin}
                   style={primaryButton}
@@ -271,7 +328,7 @@
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                gap: '16px',
+                gap: 'var(--gap-small)',
                 flexWrap: 'wrap',
                 fontFamily: '"Inter", sans-serif',
                 fontSize: '10px',
@@ -279,23 +336,40 @@
                 letterSpacing: '0.05em',
                 color: th.muted
               }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   {Object.entries(themes).map(([key, value]) => (
                     <button
                       key={key}
                       onClick={() => setTheme(key)}
                       style={{
-                        width: '14px',
-                        height: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px 0',
+                        fontFamily: '"Inter", sans-serif',
+                        fontSize: '10px',
+                        fontWeight: 500,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                        color: theme === key ? th.text : th.muted,
+                        opacity: theme === key ? 1 : 0.6,
+                        transition: 'color 0.2s, opacity 0.2s'
+                      }}
+                    >
+                      <span style={{
+                        width: '12px',
+                        height: '12px',
                         borderRadius: '50%',
                         border: theme === key ? `2px solid ${th.text}` : `1px solid ${th.muted}40`,
                         background: value.bg,
-                        cursor: 'pointer',
-                        padding: 0,
-                        transition: 'border-color 0.2s, transform 0.15s',
-                        transform: theme === key ? 'scale(1.1)' : 'scale(1)'
-                      }}
-                    />
+                        display: 'inline-block',
+                        flexShrink: 0
+                      }} />
+                      {value.name}
+                    </button>
                   ))}
                 </div>
                 <span style={{ color: th.subtle }}>·</span>
@@ -342,26 +416,27 @@
             color: th.text,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '48px 24px',
+            padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            overflow: 'auto'
           }}>
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: '440px' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)' }}>
               <h1 style={{
                 fontFamily: '"Libre Baskerville", Georgia, serif',
-                fontSize: '22px',
+                fontSize: 'var(--title-size)',
                 fontWeight: 400,
                 textAlign: 'center',
-                marginBottom: '56px',
+                marginBottom: 'var(--gap-large)',
                 fontStyle: 'italic'
               }}>
                 Complete
               </h1>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '36px', marginBottom: '56px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--stats-gap)', marginBottom: 'var(--gap-large)', flexWrap: 'wrap' }}>
                 {[
                   { value: wordCount.toLocaleString(), label: 'Words' },
                   { value: text.length.toLocaleString(), label: 'Chars' },
@@ -371,7 +446,7 @@
                   <div key={i} style={{ textAlign: 'center' }}>
                     <div style={{ 
                       fontFamily: '"Libre Baskerville", Georgia, serif',
-                      fontSize: '28px',
+                      fontSize: 'var(--stat-value-size)',
                       fontWeight: 400,
                       marginBottom: '8px'
                     }}>
@@ -394,19 +469,20 @@
               <div style={{
                 border: `1px solid ${th.subtle}`,
                 borderRadius: '8px',
-                padding: '24px',
-                marginBottom: '40px',
-                maxHeight: '220px',
+                padding: '16px 20px',
+                marginBottom: 'var(--gap-medium)',
+                maxHeight: '180px',
                 overflow: 'auto',
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: '14px',
-                lineHeight: 1.9,
-                whiteSpace: 'pre-wrap'
+                lineHeight: 1.8,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
               }}>
                 {text || 'Nothing written.'}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 {[
                   { label: 'Copy', action: () => navigator.clipboard.writeText(text) },
                   { label: 'Save', action: () => {
@@ -464,8 +540,8 @@
 
           <header style={{
             width: '100%',
-            maxWidth: '680px',
-            padding: '28px 40px 0',
+            maxWidth: 'var(--max-width-write)',
+            padding: 'var(--header-padding)',
             opacity: uiVisible ? 1 : 0,
             transition: 'opacity 0.4s ease',
             flexShrink: 0
@@ -493,8 +569,8 @@
           <main style={{
             flex: 1,
             width: '100%',
-            maxWidth: '680px',
-            padding: '48px 40px',
+            maxWidth: 'var(--max-width-write)',
+            padding: 'var(--editor-padding)',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
@@ -516,7 +592,7 @@
                 border: 'none',
                 color: th.text,
                 fontFamily: '"Libre Baskerville", Georgia, serif',
-                fontSize: '18px',
+                fontSize: 'var(--editor-font-size)',
                 fontWeight: 400,
                 lineHeight: 2,
                 resize: 'none',
@@ -528,8 +604,8 @@
 
           <footer style={{
             width: '100%',
-            maxWidth: '680px',
-            padding: '0 40px 28px',
+            maxWidth: 'var(--max-width-write)',
+            padding: 'var(--footer-padding)',
             opacity: uiVisible ? 1 : 0,
             transition: 'opacity 0.4s ease',
             flexShrink: 0

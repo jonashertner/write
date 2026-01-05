@@ -14,7 +14,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://unpkg.com/docx@8.2.0/build/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -270,10 +270,15 @@
 
       const exportAsDocx = async (texts) => {
         try {
-          if (typeof window.docx === 'undefined') {
-            throw new Error('DOCX library not loaded');
+          const docxLib = window.docx;
+          if (!docxLib) {
+            throw new Error('DOCX library not loaded. Please refresh the page.');
           }
-          const { Document, Packer, Paragraph, TextRun, PageBreak } = window.docx;
+          const Document = docxLib.Document;
+          const Packer = docxLib.Packer;
+          const Paragraph = docxLib.Paragraph;
+          const TextRun = docxLib.TextRun;
+          const PageBreak = docxLib.PageBreak;
           
           const children = [];
           

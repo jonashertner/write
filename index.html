@@ -582,11 +582,10 @@
                   type="number"
                   value={goal.value}
                   onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    const min = goal.type === 'time' ? 1 : goal.type === 'words' ? 50 : 250;
-                    const max = goal.type === 'time' ? 180 : goal.type === 'words' ? 3000 : 15000;
-                    setGoal({ ...goal, value: Math.max(min, Math.min(max, val)) });
+                    const val = parseInt(e.target.value) || 1;
+                    setGoal({ ...goal, value: Math.max(1, val) });
                   }}
+                  min="1"
                   style={{
                     fontFamily: '"Libre Baskerville", Georgia, serif',
                     fontSize: 'var(--goal-value-size)',

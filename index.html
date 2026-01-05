@@ -134,7 +134,24 @@
       const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
       const [swipeState, setSwipeState] = useState({});
       const [editingEntryId, setEditingEntryId] = useState(null);
+      const [notification, setNotification] = useState(null);
       const touchStart = useRef({});
+
+      // Safe localStorage helper with quota handling
+      const safeStorage = {
+        set: (key, value) => {
+          try {
+            localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+            return true;
+          } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+              setNotification({ type: 'error', message: 'Storage full. Please delete some entries.' });
+            }
+            console.error('Storage error:', e);
+            return false;
+          }
+        }
+      };
       
       const editorRef = useRef(null);
       const fadeTimer = useRef(null);
@@ -157,6 +174,14 @@
       useEffect(() => {
         localStorage.setItem('write_goal', JSON.stringify(goal));
       }, [goal]);
+
+      // Auto-dismiss notifications
+      useEffect(() => {
+        if (notification) {
+          const timer = setTimeout(() => setNotification(null), 3000);
+          return () => clearTimeout(timer);
+        }
+      }, [notification]);
 
       const playSound = useCallback((type) => {
         if (!sound) return;
@@ -185,21 +210,26 @@
         };
         const updated = [...savedTexts, newText];
         setSavedTexts(updated);
-        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        safeStorage.set('write_saved_texts', updated);
       };
 
       // Export functions
       const exportAsTxt = (texts) => {
-        const combined = texts.map((t, i) => {
-          const date = new Date(t.date).toLocaleDateString();
-          return `--- Entry ${i + 1} (${date}) ---\n${t.wordCount} words\n\n${t.content}\n`;
-        }).join('\n\n');
-        const blob = new Blob([combined], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
-        a.download = `writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.txt`;
-        a.click();
+        try {
+          const combined = texts.map((t, i) => {
+            const date = new Date(t.date).toLocaleDateString();
+            return `--- Entry ${i + 1} (${date}) ---\n${t.wordCount} words\n\n${t.content}\n`;
+          }).join('\n\n');
+          const blob = new Blob([combined], { type: 'text/plain' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
+          a.download = `writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.txt`;
+          a.click();
+          setNotification({ type: 'success', message: 'Exported as TXT' });
+        } catch (e) {
+          setNotification({ type: 'error', message: 'TXT export failed' });
+        }
       };
 
       const exportAsPdf = async (texts) => {
@@ -278,8 +308,13 @@
           addPageNumber(pageNum);
         });
 
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
-        doc.save(`writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.pdf`);
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
+          doc.save(`writings-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.pdf`);
+          setNotification({ type: 'success', message: 'Exported as PDF' });
+        } catch (e) {
+          setNotification({ type: 'error', message: 'PDF export failed' });
+        }
       };
 
       const exportAsDocx = async (texts) => {
@@ -369,9 +404,10 @@
           const blob = await Packer.toBlob(doc);
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
           saveAs(blob, 'writings-' + new Date().toISOString().slice(0,19).replace(/[T:]/g, '-') + '-' + tz + '.docx');
+          setNotification({ type: 'success', message: 'Exported as DOCX' });
         } catch (err) {
           console.error('DOCX export error:', err);
-          alert('DOCX export failed: ' + err.message);
+          setNotification({ type: 'error', message: 'DOCX export failed: ' + err.message });
         }
       };
 
@@ -379,14 +415,14 @@
       const deleteSelected = () => {
         const updated = savedTexts.filter(t => !selectedTexts.includes(t.id));
         setSavedTexts(updated);
-        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        safeStorage.set('write_saved_texts', updated);
         setSelectedTexts([]);
       };
 
       const deleteEntry = (id) => {
         const updated = savedTexts.filter(t => t.id !== id);
         setSavedTexts(updated);
-        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        safeStorage.set('write_saved_texts', updated);
         setSelectedTexts(prev => prev.filter(x => x !== id));
       };
 
@@ -395,7 +431,7 @@
           t.id === id ? { ...t, pinned: !t.pinned } : t
         );
         setSavedTexts(updated);
-        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        safeStorage.set('write_saved_texts', updated);
       };
 
       const startEdit = (t) => {
@@ -420,7 +456,7 @@
           } : t
         );
         setSavedTexts(updated);
-        localStorage.setItem('write_saved_texts', JSON.stringify(updated));
+        safeStorage.set('write_saved_texts', updated);
         setEditingEntryId(null);
         setText('');
         localStorage.removeItem('write_draft');
@@ -428,6 +464,9 @@
       };
 
       const cancelEdit = () => {
+        const originalEntry = savedTexts.find(t => t.id === editingEntryId);
+        const hasUnsavedChanges = originalEntry && originalEntry.content !== text;
+        if (hasUnsavedChanges && !confirm('Discard unsaved changes?')) return;
         setEditingEntryId(null);
         setText('');
         localStorage.removeItem('write_draft');
@@ -497,7 +536,7 @@
 
       const deleteAll = () => {
         setSavedTexts([]);
-        localStorage.setItem('write_saved_texts', JSON.stringify([]));
+        safeStorage.set('write_saved_texts', []);
         setSelectedTexts([]);
       };
 
@@ -520,6 +559,26 @@
       const th = themes[theme];
       const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
+      // Notification component
+      const Notification = () => notification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: notification.type === 'error' ? '#c00' : th.text,
+          color: th.bg,
+          padding: '10px 20px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        }}>
+          {notification.message}
+        </div>
+      );
+
       useEffect(() => {
         if (view === 'write' && text) {
           const timer = setTimeout(() => {
@@ -531,11 +590,15 @@
       }, [text, view]);
 
       useEffect(() => {
-        const draft = localStorage.getItem('write_draft');
-        if (draft) setText(draft);
-        const saved = localStorage.getItem('write_saved_texts');
-        if (saved) setSavedTexts(JSON.parse(saved));
-        
+        try {
+          const draft = localStorage.getItem('write_draft');
+          if (draft) setText(draft);
+          const saved = localStorage.getItem('write_saved_texts');
+          if (saved) setSavedTexts(JSON.parse(saved));
+        } catch (e) {
+          console.error('Failed to load saved data:', e);
+        }
+
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
@@ -661,6 +724,7 @@
             transition: 'background 0.3s ease, color 0.3s ease',
             boxSizing: 'border-box'
           }}>
+            <Notification />
             <style>{`
               ::selection { background: ${th.accent}18; }
               input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 1px; background: ${th.subtle}; cursor: pointer; }
@@ -901,6 +965,7 @@
             boxSizing: 'border-box',
             overflow: 'auto'
           }}>
+            <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
             <div style={{ width: '100%', maxWidth: 'var(--max-width-done)' }}>
@@ -1009,6 +1074,7 @@
             WebkitOverflowScrolling: 'touch',
             padding: 'var(--page-padding)'
           }}>
+            <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
             <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', paddingBottom: '40px' }}>
@@ -1079,7 +1145,7 @@
                           opacity: swipeState[t.id] > 20 ? Math.min((swipeState[t.id] - 20) / 60, 1) : 0,
                           transition: 'opacity 0.1s'
                         }}>
-                          {t.pinned ? '☆' : '★'}
+                          {t.pinned ? '★' : '☆'}
                         </div>
                         <div
                           onTouchStart={(e) => handleTouchStart(t.id, e)}
@@ -1217,6 +1283,7 @@
           onMouseMove={showUI}
           onTouchStart={showUI}
         >
+          <Notification />
           <style>{`
             ::selection { background: ${th.accent}18; }
             .editor::placeholder { color: ${th.muted}; font-style: italic; }

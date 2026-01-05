@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>write</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#FFFFFF">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -71,6 +75,34 @@
         --button-padding: 10px 20px;
         --stats-gap: 16px;
       }
+    }
+    
+    /* iOS-specific fixes */
+    @supports (-webkit-touch-callout: none) {
+      html, body, #root {
+        min-height: -webkit-fill-available;
+      }
+    }
+    
+    /* Prevent pull-to-refresh and unwanted gestures on mobile */
+    body {
+      overscroll-behavior: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    
+    /* Allow text selection in textarea */
+    textarea {
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: pan-y;
+    }
+    
+    /* Safe area padding for notched devices */
+    @supports (padding: env(safe-area-inset-top)) {
+      .safe-area-top { padding-top: env(safe-area-inset-top); }
+      .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
     }
   </style>
 </head>
@@ -341,8 +373,22 @@
 
       const enterFullScreen = () => {
         const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        // iOS doesn't support fullscreen API, just proceed
+        if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+        // Scroll to hide address bar on mobile
+        window.scrollTo(0, 1);
+      };
+      
+      const exitFullScreen = () => {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
       };
 
       const begin = () => {
@@ -689,7 +735,7 @@
                     localStorage.removeItem('write_draft'); 
                     setText(''); 
                     setView('home'); 
-                    if (document.exitFullscreen) document.exitFullscreen();
+                    exitFullScreen();
                   }}
                 ].map((btn, i) => (
                   <button
@@ -895,6 +941,7 @@
             boxSizing: 'border-box'
           }}
           onMouseMove={showUI}
+          onTouchStart={showUI}
         >
           <style>{`
             ::selection { background: ${th.accent}18; }
@@ -904,6 +951,36 @@
             .editor::-webkit-scrollbar-track { background: transparent; }
             .editor::-webkit-scrollbar-thumb { background: ${th.subtle}; border-radius: 3px; }
           `}</style>
+
+          {/* Subtle escape button - top left corner */}
+          <button
+            onClick={() => { exitFullScreen(); setView('done'); }}
+            style={{
+              position: 'fixed',
+              top: 'env(safe-area-inset-top, 12px)',
+              left: '12px',
+              marginTop: '12px',
+              width: '32px',
+              height: '32px',
+              background: 'transparent',
+              border: 'none',
+              color: th.muted,
+              opacity: uiVisible ? 0.4 : 0,
+              cursor: 'pointer',
+              transition: 'opacity 0.4s ease',
+              fontSize: '18px',
+              fontWeight: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              padding: 0,
+              WebkitTapHighlightColor: 'transparent'
+            }}
+            aria-label="Exit"
+          >
+            ×
+          </button>
 
           <header style={{
             width: '100%',

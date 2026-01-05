@@ -14,7 +14,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://unpkg.com/docx@8.2.0/build/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -270,10 +270,15 @@
 
       const exportAsDocx = async (texts) => {
         try {
-          if (typeof window.docx === 'undefined') {
-            throw new Error('DOCX library not loaded');
+          const docxLib = window.docx;
+          if (!docxLib) {
+            throw new Error('DOCX library not loaded. Please refresh the page.');
           }
-          const { Document, Packer, Paragraph, TextRun, PageBreak } = window.docx;
+          const Document = docxLib.Document;
+          const Packer = docxLib.Packer;
+          const Paragraph = docxLib.Paragraph;
+          const TextRun = docxLib.TextRun;
+          const PageBreak = docxLib.PageBreak;
           
           const children = [];
           
@@ -409,7 +414,10 @@
         if (view === 'write' && goal.type === 'words' && wordCount >= goal.value) {
           setView('done');
         }
-      }, [wordCount, goal, view]);
+        if (view === 'write' && goal.type === 'chars' && text.length >= goal.value) {
+          setView('done');
+        }
+      }, [wordCount, text.length, goal, view]);
 
       const showUI = useCallback(() => {
         setUiVisible(true);
@@ -457,7 +465,11 @@
       };
 
       const fmt = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-      const progress = goal.type === 'time' ? ((goal.value * 60 - timeLeft) / (goal.value * 60)) * 100 : Math.min((wordCount / goal.value) * 100, 100);
+      const progress = goal.type === 'time'
+        ? ((goal.value * 60 - timeLeft) / (goal.value * 60)) * 100
+        : goal.type === 'chars'
+          ? Math.min((text.length / goal.value) * 100, 100)
+          : Math.min((wordCount / goal.value) * 100, 100);
 
       const buttonBase = {
         fontFamily: '"Inter", sans-serif',
@@ -502,6 +514,9 @@
               input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 1px; background: ${th.subtle}; cursor: pointer; }
               input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: ${th.text}; border-radius: 50%; cursor: grab; }
               input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+              input[type="number"]::-webkit-outer-spin-button,
+              input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+              input[type="number"] { -moz-appearance: textfield; }
             `}</style>
 
             <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', padding: '0 8px' }}>
@@ -517,10 +532,10 @@
               </h1>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--gap-medium)', marginBottom: 'var(--gap-medium)' }}>
-                {['time', 'words'].map(t => (
+                {['time', 'words', 'chars'].map(t => (
                   <button
                     key={t}
-                    onClick={() => setGoal({ ...goal, type: t, value: t === 'time' ? 25 : 750 })}
+                    onClick={() => setGoal({ ...goal, type: t, value: t === 'time' ? 25 : t === 'words' ? 750 : 3750 })}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -547,8 +562,8 @@
                   value={goal.value}
                   onChange={(e) => {
                     const val = parseInt(e.target.value) || 0;
-                    const min = goal.type === 'time' ? 1 : 50;
-                    const max = goal.type === 'time' ? 180 : 3000;
+                    const min = goal.type === 'time' ? 1 : goal.type === 'words' ? 50 : 250;
+                    const max = goal.type === 'time' ? 180 : goal.type === 'words' ? 3000 : 15000;
                     setGoal({ ...goal, value: Math.max(min, Math.min(max, val)) });
                   }}
                   style={{
@@ -575,28 +590,16 @@
                   color: th.muted,
                   marginTop: '16px'
                 }}>
-                  {goal.type === 'time' ? 'minutes' : 'words'}
+                  {goal.type === 'time' ? 'minutes' : goal.type === 'words' ? 'words' : 'characters'}
                 </div>
-                {goal.type === 'words' && (
-                  <div style={{
-                    fontFamily: '"Inter", sans-serif',
-                    fontSize: '10px',
-                    letterSpacing: '0.03em',
-                    color: th.muted,
-                    marginTop: '8px',
-                    opacity: 0.7
-                  }}>
-                    ~{(goal.value * 5).toLocaleString()} characters
-                  </div>
-                )}
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--gap-large)' }}>
                 <input
                   type="range"
-                  min={goal.type === 'time' ? 5 : 50}
-                  max={goal.type === 'time' ? 180 : 3000}
-                  step={goal.type === 'time' ? 5 : 50}
+                  min={goal.type === 'time' ? 5 : goal.type === 'words' ? 50 : 250}
+                  max={goal.type === 'time' ? 180 : goal.type === 'words' ? 3000 : 15000}
+                  step={goal.type === 'time' ? 5 : goal.type === 'words' ? 50 : 250}
                   value={goal.value}
                   onChange={(e) => setGoal({ ...goal, value: parseInt(e.target.value) })}
                   style={{ width: '100%', maxWidth: '200px', minWidth: '120px' }}
@@ -1078,7 +1081,7 @@
                 >
                   ×
                 </button>
-                <span>{goal.type === 'time' ? fmt(timeLeft) : `${wordCount} / ${goal.value}`}</span>
+                <span>{goal.type === 'time' ? fmt(timeLeft) : goal.type === 'chars' ? `${text.length} / ${goal.value}` : `${wordCount} / ${goal.value}`}</span>
               </div>
               <span>{wordCount} words · {text.length} chars</span>
             </div>

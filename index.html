@@ -482,8 +482,8 @@
         const touch = e.touches[0];
         const diffX = touch.clientX - touchStart.current[id].x;
         const diffY = Math.abs(touch.clientY - touchStart.current[id].y);
-        // Only swipe horizontally if not scrolling vertically
-        if (diffY < 30 && Math.abs(diffX) > 5) {
+        // Only swipe right (positive) for pinning
+        if (diffY < 30 && diffX > 5) {
           setSwipeState(prev => ({ ...prev, [id]: diffX }));
         }
       };
@@ -512,7 +512,8 @@
         rafRef.current[id] = requestAnimationFrame(() => {
           const diffX = e.clientX - touchStart.current[id].x;
           const diffY = Math.abs(e.clientY - touchStart.current[id].y);
-          if (diffY < 30 && Math.abs(diffX) > 5) {
+          // Only swipe right (positive) for pinning
+          if (diffY < 30 && diffX > 5) {
             touchStart.current[id].swiping = true;
             setSwipeState(prev => ({ ...prev, [id]: diffX }));
           } else if (!touchStart.current[id].swiping) {

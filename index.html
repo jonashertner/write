@@ -270,7 +270,7 @@
 
       const exportAsDocx = async (texts) => {
         try {
-          const { Document, Packer, Paragraph, TextRun, Footer, AlignmentType, PageNumber, Header, Tab, TabStopType, TabStopPosition, convertInchesToTwip, LineRuleType, HeadingLevel } = docx;
+          const { Document, Packer, Paragraph, TextRun, PageBreak, AlignmentType } = docx;
           
           const children = [];
           
@@ -281,7 +281,9 @@
             
             // Add page break between entries (except first)
             if (i > 0) {
-              children.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+              children.push(new Paragraph({
+                children: [new PageBreak()]
+              }));
             }
             
             // Date header
@@ -290,8 +292,7 @@
               children: [new TextRun({ 
                 text: date.toUpperCase(), 
                 size: 18,
-                color: '888888',
-                font: 'Times New Roman'
+                color: '888888'
               })]
             }));
             
@@ -299,10 +300,9 @@
             children.push(new Paragraph({
               spacing: { after: 400 },
               children: [new TextRun({ 
-                text: `${t.wordCount} words`, 
+                text: t.wordCount + ' words', 
                 size: 18, 
-                color: '888888',
-                font: 'Times New Roman'
+                color: '888888'
               })]
             }));
             
@@ -316,8 +316,7 @@
                 },
                 children: [new TextRun({ 
                   text: para || ' ',
-                  size: 24,
-                  font: 'Times New Roman'
+                  size: 24
                 })]
               }));
             });
@@ -325,38 +324,16 @@
 
           const doc = new Document({
             sections: [{
-              properties: {
-                page: {
-                  margin: {
-                    top: convertInchesToTwip(1),
-                    right: convertInchesToTwip(1),
-                    bottom: convertInchesToTwip(1),
-                    left: convertInchesToTwip(1)
-                  }
-                }
-              },
-              footers: {
-                default: new Footer({
-                  children: [new Paragraph({
-                    alignment: AlignmentType.CENTER,
-                    children: [new TextRun({ 
-                      children: [PageNumber.CURRENT],
-                      size: 20,
-                      color: '888888',
-                      font: 'Times New Roman'
-                    })]
-                  })]
-                })
-              },
-              children
+              properties: {},
+              children: children
             }]
           });
 
           const blob = await Packer.toBlob(doc);
-          saveAs(blob, `writings-${new Date().toISOString().slice(0,10)}.docx`);
+          saveAs(blob, 'writings-' + new Date().toISOString().slice(0,10) + '.docx');
         } catch (err) {
           console.error('DOCX export error:', err);
-          alert('DOCX export failed. Try PDF or TXT instead.');
+          alert('DOCX export failed: ' + err.message);
         }
       };
 

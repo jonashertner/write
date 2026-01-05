@@ -241,8 +241,7 @@
           doc.setFont('times', 'normal');
           doc.setFontSize(12);
           
-          const paragraphs = t.content.split('
-');
+          const paragraphs = t.content.split('\n');
           paragraphs.forEach((para, pIdx) => {
             if (para.trim() === '') {
               y += paragraphSpacing / 2;
@@ -308,8 +307,7 @@
             }));
             
             // Body paragraphs
-            const paragraphs = t.content.split('
-');
+            const paragraphs = t.content.split('\n');
             paragraphs.forEach(para => {
               children.push(new Paragraph({
                 spacing: { 

@@ -38,6 +38,12 @@
       --button-padding: 14px 28px;
       --stats-gap: 36px;
     }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .draft-indicator { animation: pulse 2s ease-in-out infinite; }
     
     @media (max-width: 768px) {
       :root {
@@ -702,7 +708,7 @@
                 {text && (
                   <>
                     <span style={{ color: th.subtle }}>·</span>
-                    <span style={{ color: th.accent }}>Draft: {wordCount} words · {text.length} chars</span>
+                    <span className="draft-indicator" style={{ color: th.accent }}>Draft: {wordCount} words · {text.length} chars</span>
                   </>
                 )}
               </div>
@@ -738,7 +744,7 @@
                 opacity: 0.6
               }}>
                 <div>
-                  Built with {theme === 'dark' ? '♡' : '♥'} · Your data never leaves your device
+                  Built with ♥ · Your data never leaves your device
                 </div>
               </div>
             </div>
@@ -830,6 +836,7 @@
                   { label: 'Copy', action: () => navigator.clipboard.writeText(text) },
                   { label: 'Keep', action: () => {
                     saveToLibrary(text, { wordCount, charCount: text.length, duration, wpm });
+                    setView('library');
                   }},
                   { label: 'New', primary: true, action: () => { 
                     localStorage.removeItem('write_draft'); 

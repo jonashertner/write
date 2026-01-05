@@ -270,7 +270,10 @@
 
       const exportAsDocx = async (texts) => {
         try {
-          const { Document, Packer, Paragraph, TextRun, PageBreak, AlignmentType } = docx;
+          if (typeof window.docx === 'undefined') {
+            throw new Error('DOCX library not loaded');
+          }
+          const { Document, Packer, Paragraph, TextRun, PageBreak } = window.docx;
           
           const children = [];
           

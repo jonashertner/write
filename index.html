@@ -542,7 +542,8 @@
       }, []);
 
       useEffect(() => {
-        if (view !== 'write' || goal.type !== 'time') return;
+        // Don't run timer when editing an existing entry
+        if (view !== 'write' || goal.type !== 'time' || editingEntryId) return;
         const interval = setInterval(() => {
           setTimeLeft(prev => {
             if (prev <= 1) { setView('done'); return 0; }
@@ -550,16 +551,18 @@
           });
         }, 1000);
         return () => clearInterval(interval);
-      }, [view, goal.type]);
+      }, [view, goal.type, editingEntryId]);
 
       useEffect(() => {
+        // Don't auto-complete when editing an existing entry
+        if (editingEntryId) return;
         if (view === 'write' && goal.type === 'words' && wordCount >= goal.value) {
           setView('done');
         }
         if (view === 'write' && goal.type === 'chars' && text.length >= goal.value) {
           setView('done');
         }
-      }, [wordCount, text.length, goal, view]);
+      }, [wordCount, text.length, goal, view, editingEntryId]);
 
       const showUI = useCallback(() => {
         setUiVisible(true);

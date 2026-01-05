@@ -448,7 +448,15 @@
 
       const onKeyDown = (e) => {
         showUI();
-        if (e.key === 'Enter') {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          if (text.trim()) {
+            const duration = started ? Math.floor((Date.now() - started) / 1000) : 0;
+            const minutes = duration / 60;
+            const wpm = minutes > 0 ? Math.round(wordCount / minutes) : 0;
+            saveToLibrary(text, { wordCount, charCount: text.length, duration, wpm });
+          }
+        } else if (e.key === 'Enter') {
           playSound('return');
         } else if (e.key === ' ' || e.key === 'Backspace') {
           playSound('space');
@@ -930,7 +938,7 @@
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--gap-medium)' }}>
-                    {savedTexts.map(t => (
+                    {[...savedTexts].reverse().map(t => (
                       <div 
                         key={t.id}
                         onClick={() => toggleSelect(t.id)}

@@ -18,9 +18,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { height: 100%; height: -webkit-fill-available; overflow: hidden; }
-    body { height: 100%; height: -webkit-fill-available; margin: 0; padding: 0; overflow: hidden; position: fixed; width: 100%; }
-    #root { height: 100%; width: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
+    html, body, #root {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    html { height: -webkit-fill-available; }
+    body {
+      height: -webkit-fill-available;
+      overscroll-behavior: none;
+    }
 
     :root {
       --page-padding: 48px 24px;
@@ -39,10 +48,6 @@
       --gap-small: 16px;
       --button-padding: 14px 28px;
       --stats-gap: 36px;
-      --safe-area-top: env(safe-area-inset-top, 0px);
-      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-area-left: env(safe-area-inset-left, 0px);
-      --safe-area-right: env(safe-area-inset-right, 0px);
     }
 
     @keyframes pulse {
@@ -117,11 +122,6 @@
         --footer-padding: 0 6px 4px;
         --button-padding: 4px 8px;
       }
-    }
-    
-    /* Prevent pull-to-refresh */
-    body {
-      overscroll-behavior: none;
     }
     
     /* Allow text selection in textarea */
@@ -771,21 +771,13 @@
       const ghostButton = { ...buttonBase, background: 'transparent', border: `1px solid ${th.subtle}`, color: th.muted, padding: '10px 18px' };
 
       const fullScreen = {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
         width: '100%',
+        maxWidth: '100%',
         height: '100%',
         overflow: 'hidden',
+        overflowX: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
-        boxSizing: 'border-box',
-        paddingTop: 'var(--safe-area-top)',
-        paddingBottom: 'var(--safe-area-bottom)',
-        paddingLeft: 'var(--safe-area-left)',
-        paddingRight: 'var(--safe-area-right)'
+        flexDirection: 'column'
       };
 
       // ═══════════════════ HOME ═══════════════════
@@ -795,12 +787,10 @@
             ...fullScreen,
             background: th.bg,
             color: th.text,
-            alignItems: 'center',
             justifyContent: 'center',
             padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            transition: 'background 0.3s ease, color 0.3s ease',
-            boxSizing: 'border-box'
+            transition: 'background 0.3s ease, color 0.3s ease'
           }}>
             <Notification />
             <style>{`
@@ -813,7 +803,7 @@
               input[type="number"] { -moz-appearance: textfield; }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', margin: '0 auto', boxSizing: 'border-box' }}>
               <h1 style={{ 
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -1035,18 +1025,16 @@
             ...fullScreen,
             background: th.bg,
             color: th.text,
-            alignItems: 'center',
             justifyContent: 'center',
             padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease',
-            boxSizing: 'border-box',
-            overflow: 'auto'
+            overflowY: 'auto'
           }}>
             <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', margin: '0 auto', boxSizing: 'border-box' }}>
               <h1 style={{
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -1148,8 +1136,7 @@
             color: th.text,
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease',
-            boxSizing: 'border-box',
-            overflow: 'auto',
+            overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
             padding: 'var(--page-padding)'
           }}>
@@ -1372,15 +1359,13 @@
 
       // ═══════════════════ WRITE ═══════════════════
       return (
-        <div 
+        <div
           style={{
             ...fullScreen,
             background: th.bg,
             color: th.text,
-            alignItems: 'center',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            transition: 'background 0.3s ease',
-            boxSizing: 'border-box'
+            transition: 'background 0.3s ease'
           }}
           onMouseMove={showUI}
           onTouchStart={showUI}
@@ -1398,6 +1383,7 @@
           <header style={{
             width: '100%',
             maxWidth: 'var(--max-width-write)',
+            margin: '0 auto',
             padding: 'var(--header-padding)',
             opacity: uiVisible ? 1 : 0,
             transition: 'opacity 0.4s ease',
@@ -1455,6 +1441,7 @@
             flex: 1,
             width: '100%',
             maxWidth: 'var(--max-width-write)',
+            margin: '0 auto',
             padding: 'var(--editor-padding)',
             display: 'flex',
             flexDirection: 'column',
@@ -1491,6 +1478,7 @@
           <footer style={{
             width: '100%',
             maxWidth: 'var(--max-width-write)',
+            margin: '0 auto',
             padding: 'var(--footer-padding)',
             opacity: uiVisible ? 1 : 0,
             transition: 'opacity 0.4s ease',

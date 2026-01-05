@@ -18,9 +18,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { max-width: 100%; }
+    html, body, #root, textarea, input, button { max-width: none; }
+    img, video, iframe { max-width: 100%; height: auto; }
     html {
       height: 100%;
       height: -webkit-fill-available;
+      width: 100%;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
+      position: fixed;
+      left: 0;
+      right: 0;
     }
     body {
       height: 100%;
@@ -29,13 +38,19 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      overflow-x: hidden;
       overscroll-behavior: none;
+      position: fixed;
+      left: 0;
+      right: 0;
     }
     #root {
       height: 100%;
       height: -webkit-fill-available;
       width: 100%;
       overflow: hidden;
+      overflow-x: hidden;
+      position: relative;
     }
 
     :root {
@@ -780,13 +795,16 @@
       const fullScreen = {
         width: '100%',
         maxWidth: '100%',
+        minWidth: 0,
         height: '100%',
         minHeight: '100%',
         minHeight: '-webkit-fill-available',
         overflow: 'hidden',
         overflowX: 'hidden',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        position: 'relative'
       };
 
       // ═══════════════════ HOME ═══════════════════
@@ -799,7 +817,9 @@
             justifyContent: 'center',
             padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            transition: 'background 0.3s ease, color 0.3s ease'
+            transition: 'background 0.3s ease, color 0.3s ease',
+            overflowY: 'auto',
+            overflowX: 'hidden'
           }}>
             <Notification />
             <style>{`
@@ -812,7 +832,7 @@
               input[type="number"] { -moz-appearance: textfield; }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', margin: '0 auto', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-home)', minWidth: 0, margin: '0 auto', boxSizing: 'border-box', overflow: 'hidden' }}>
               <h1 style={{ 
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -1038,12 +1058,13 @@
             padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            overflowX: 'hidden'
           }}>
             <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', margin: '0 auto', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', minWidth: 0, margin: '0 auto', boxSizing: 'border-box', overflow: 'hidden' }}>
               <h1 style={{
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -1146,13 +1167,14 @@
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease',
             overflowY: 'auto',
+            overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch',
             padding: 'var(--page-padding)'
           }}>
             <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', paddingBottom: '40px', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', maxWidth: '600px', minWidth: 0, margin: '0 auto', paddingBottom: '40px', boxSizing: 'border-box', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--gap-medium)' }}>
                 <h1 style={{
                   fontFamily: '"Libre Baskerville", Georgia, serif',
@@ -1392,6 +1414,7 @@
           <header style={{
             width: '100%',
             maxWidth: 'var(--max-width-write)',
+            minWidth: 0,
             margin: '0 auto',
             padding: 'var(--header-padding)',
             opacity: uiVisible ? 1 : 0,
@@ -1411,9 +1434,11 @@
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: th.muted,
-              marginBottom: isMobile ? '8px' : '20px'
+              marginBottom: isMobile ? '8px' : '20px',
+              minWidth: 0,
+              overflow: 'hidden'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px', flexShrink: 0, minWidth: 0 }}>
                 <button
                   onClick={() => { exitFullScreen(); editingEntryId ? cancelEdit() : setView('done'); }}
                   style={{
@@ -1450,12 +1475,14 @@
             flex: 1,
             width: '100%',
             maxWidth: 'var(--max-width-write)',
+            minWidth: 0,
             margin: '0 auto',
             padding: 'var(--editor-padding)',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
             overflow: 'hidden',
+            overflowX: 'hidden',
             boxSizing: 'border-box'
           }}>
             <textarea
@@ -1487,6 +1514,7 @@
           <footer style={{
             width: '100%',
             maxWidth: 'var(--max-width-write)',
+            minWidth: 0,
             margin: '0 auto',
             padding: 'var(--footer-padding)',
             opacity: uiVisible ? 1 : 0,
@@ -1501,6 +1529,7 @@
               alignItems: 'center',
               flexWrap: 'wrap',
               gap: '8px',
+              minWidth: 0,
               fontFamily: '"Inter", sans-serif',
               fontSize: '10px',
               fontWeight: 500,

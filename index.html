@@ -464,9 +464,7 @@
       };
 
       const cancelEdit = () => {
-        const originalEntry = savedTexts.find(t => t.id === editingEntryId);
-        const hasUnsavedChanges = originalEntry && originalEntry.content !== text;
-        if (hasUnsavedChanges && !confirm('Discard unsaved changes?')) return;
+        // Auto-save already handled by useEffect
         setEditingEntryId(null);
         setText('');
         localStorage.removeItem('write_draft');
@@ -582,12 +580,30 @@
       useEffect(() => {
         if (view === 'write' && text) {
           const timer = setTimeout(() => {
-            localStorage.setItem('write_draft', text);
+            if (editingEntryId) {
+              // Auto-save edits to the entry
+              const originalEntry = savedTexts.find(t => t.id === editingEntryId);
+              if (originalEntry && originalEntry.content !== text) {
+                const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                const updated = savedTexts.map(t =>
+                  t.id === editingEntryId ? {
+                    ...t,
+                    content: text,
+                    wordCount,
+                    editedDate: new Date().toISOString()
+                  } : t
+                );
+                setSavedTexts(updated);
+                safeStorage.set('write_saved_texts', updated);
+              }
+            } else {
+              localStorage.setItem('write_draft', text);
+            }
             setLastSaved(new Date());
           }, 1500);
           return () => clearTimeout(timer);
         }
-      }, [text, view]);
+      }, [text, view, editingEntryId, savedTexts]);
 
       useEffect(() => {
         try {

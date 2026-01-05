@@ -461,9 +461,7 @@
 
       const handleTouchEnd = (id) => {
         const diff = swipeState[id] || 0;
-        if (diff < -80) {
-          deleteEntry(id);
-        } else if (diff > 80) {
+        if (diff > 80) {
           togglePin(id);
         }
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
@@ -486,9 +484,7 @@
       const handleMouseUp = (id) => {
         if (!touchStart.current[id]?.isMouseDown) return;
         const diff = swipeState[id] || 0;
-        if (diff < -80) {
-          deleteEntry(id);
-        } else if (diff > 80) {
+        if (diff > 80) {
           togglePin(id);
         }
         setSwipeState(prev => ({ ...prev, [id]: 0 }));
@@ -1013,10 +1009,7 @@
             boxSizing: 'border-box',
             overflow: 'auto',
             WebkitOverflowScrolling: 'touch',
-            paddingTop: 'max(env(safe-area-inset-top), 20px)',
-            paddingBottom: 'max(env(safe-area-inset-bottom), 20px)',
-            paddingLeft: 'max(env(safe-area-inset-left), 20px)',
-            paddingRight: 'max(env(safe-area-inset-right), 20px)'
+            padding: 'var(--page-padding)'
           }}>
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
@@ -1089,22 +1082,6 @@
                           transition: 'opacity 0.1s'
                         }}>
                           {t.pinned ? '☆' : '★'}
-                        </div>
-                        <div style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: '80px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '20px',
-                          color: '#c00',
-                          opacity: swipeState[t.id] < -20 ? Math.min((-swipeState[t.id] - 20) / 60, 1) : 0,
-                          transition: 'opacity 0.1s'
-                        }}>
-                          ✕
                         </div>
                         <div
                           onTouchStart={(e) => handleTouchStart(t.id, e)}

@@ -18,7 +18,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    html { height: -webkit-fill-available; }
+    body { min-height: 100vh; min-height: -webkit-fill-available; margin: 0; padding: 0; overflow: hidden; }
+    #root { height: 100%; min-height: 100vh; min-height: -webkit-fill-available; }
     
     :root {
       --page-padding: 48px 24px;
@@ -416,9 +418,16 @@
 
       const saveEditedEntry = () => {
         if (!editingEntryId) return;
+        const originalEntry = savedTexts.find(t => t.id === editingEntryId);
+        const hasChanged = originalEntry && originalEntry.content !== text;
         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
         const updated = savedTexts.map(t =>
-          t.id === editingEntryId ? { ...t, content: text, wordCount, editedDate: new Date().toISOString() } : t
+          t.id === editingEntryId ? {
+            ...t,
+            content: text,
+            wordCount,
+            ...(hasChanged ? { editedDate: new Date().toISOString() } : {})
+          } : t
         );
         setSavedTexts(updated);
         localStorage.setItem('write_saved_texts', JSON.stringify(updated));
@@ -634,10 +643,11 @@
       const secondaryButton = { ...buttonBase, background: 'transparent', border: `1px solid ${th.text}`, color: th.text, padding: '12px 20px' };
       const ghostButton = { ...buttonBase, background: 'transparent', border: `1px solid ${th.subtle}`, color: th.muted, padding: '10px 18px' };
 
-      const fullScreen = { 
-        minHeight: '100vh', 
-        height: '100vh', 
-        width: '100vw', 
+      const fullScreen = {
+        minHeight: '100vh',
+        minHeight: '-webkit-fill-available',
+        height: '100%',
+        width: '100vw',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column'
@@ -989,24 +999,28 @@
 
       // ═══════════════════ LIBRARY ═══════════════════
       if (view === 'library') {
-        const textsToExport = selectedTexts.length > 0 
+        const textsToExport = selectedTexts.length > 0
           ? savedTexts.filter(t => selectedTexts.includes(t.id))
           : savedTexts;
-        
+
         return (
           <div style={{
             ...fullScreen,
             background: th.bg,
             color: th.text,
-            padding: 'var(--page-padding)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.3s ease',
             boxSizing: 'border-box',
-            overflow: 'auto'
+            overflow: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingTop: 'max(env(safe-area-inset-top), 20px)',
+            paddingBottom: 'max(env(safe-area-inset-bottom), 20px)',
+            paddingLeft: 'max(env(safe-area-inset-left), 20px)',
+            paddingRight: 'max(env(safe-area-inset-right), 20px)'
           }}>
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+            <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto', paddingBottom: '40px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--gap-medium)' }}>
                 <h1 style={{
                   fontFamily: '"Libre Baskerville", Georgia, serif',
@@ -1058,62 +1072,96 @@
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--gap-medium)' }}>
                     {[...savedTexts].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.editedDate || b.date) - new Date(a.editedDate || a.date)).map(t => (
-                      <div
-                        key={t.id}
-                        onTouchStart={(e) => handleTouchStart(t.id, e)}
-                        onTouchMove={(e) => handleTouchMove(t.id, e)}
-                        onTouchEnd={() => handleTouchEnd(t.id)}
-                        onMouseDown={(e) => handleMouseDown(t.id, e)}
-                        onMouseMove={(e) => handleMouseMove(t.id, e)}
-                        onMouseUp={() => handleMouseUp(t.id)}
-                        onMouseLeave={() => handleMouseLeave(t.id)}
-                        onClick={() => Math.abs(swipeState[t.id] || 0) < 10 && toggleSelect(t.id)}
-                        onDoubleClick={() => startEdit(t)}
-                        style={{
-                          border: `1px solid ${selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
-                          borderRadius: '8px',
-                          padding: '16px',
-                          cursor: 'pointer',
-                          transition: swipeState[t.id] ? 'none' : 'transform 0.2s, border-color 0.2s',
-                          transform: `translateX(${swipeState[t.id] || 0}px)`,
-                          background: swipeState[t.id] < -40 ? '#c0000015' : swipeState[t.id] > 40 ? `${th.accent}15` : selectedTexts.includes(t.id) ? `${th.text}08` : 'transparent',
-                          position: 'relative',
-                          userSelect: 'none'
-                        }}
-                      >
+                      <div key={t.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: '8px' }}>
+                        {/* Swipe action indicators */}
                         <div style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: '80px',
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          marginBottom: '8px',
-                          fontFamily: '"Inter", sans-serif',
-                          fontSize: '10px',
-                          fontWeight: 500,
-                          letterSpacing: '0.05em',
-                          textTransform: 'uppercase',
-                          color: th.muted
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '20px',
+                          color: th.muted,
+                          opacity: swipeState[t.id] > 20 ? Math.min((swipeState[t.id] - 20) / 60, 1) : 0,
+                          transition: 'opacity 0.1s'
                         }}>
-                          <div>
-                            <div>{t.pinned ? '★ ' : ''}{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</div>
-                            {t.editedDate && <div style={{ opacity: 0.7, marginTop: '2px' }}>edited {new Date(t.editedDate).toLocaleDateString()} {new Date(t.editedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>{t.wordCount} words</span>
-                            <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '2px', fontSize: '10px' }}>Edit</button>
-                          </div>
+                          {t.pinned ? '☆' : '★'}
                         </div>
                         <div style={{
-                          fontFamily: '"Libre Baskerville", Georgia, serif',
-                          fontSize: '14px',
-                          lineHeight: 1.6,
-                          color: th.text,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical'
+                          position: 'absolute',
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: '80px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '20px',
+                          color: '#c00',
+                          opacity: swipeState[t.id] < -20 ? Math.min((-swipeState[t.id] - 20) / 60, 1) : 0,
+                          transition: 'opacity 0.1s'
                         }}>
-                          {t.content}
+                          ✕
+                        </div>
+                        <div
+                          onTouchStart={(e) => handleTouchStart(t.id, e)}
+                          onTouchMove={(e) => handleTouchMove(t.id, e)}
+                          onTouchEnd={() => handleTouchEnd(t.id)}
+                          onMouseDown={(e) => handleMouseDown(t.id, e)}
+                          onMouseMove={(e) => handleMouseMove(t.id, e)}
+                          onMouseUp={() => handleMouseUp(t.id)}
+                          onMouseLeave={() => handleMouseLeave(t.id)}
+                          onClick={() => Math.abs(swipeState[t.id] || 0) < 10 && toggleSelect(t.id)}
+                          onDoubleClick={() => startEdit(t)}
+                          style={{
+                            border: `1px solid ${selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
+                            borderRadius: '8px',
+                            padding: '16px',
+                            cursor: 'pointer',
+                            transition: swipeState[t.id] ? 'none' : 'transform 0.2s, border-color 0.2s',
+                            transform: `translateX(${swipeState[t.id] || 0}px)`,
+                            background: th.bg,
+                            position: 'relative',
+                            userSelect: 'none'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: '8px',
+                            fontFamily: '"Inter", sans-serif',
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase',
+                            color: th.muted
+                          }}>
+                            <div>
+                              <div>{t.pinned ? '★ ' : ''}{new Date(t.date).toLocaleDateString()} {new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</div>
+                              {t.editedDate && <div style={{ opacity: 0.7, marginTop: '2px' }}>edited {new Date(t.editedDate).toLocaleDateString()} {new Date(t.editedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>{t.wordCount} words</span>
+                              <button onClick={(e) => { e.stopPropagation(); startEdit(t); }} style={{ background: 'none', border: 'none', color: th.muted, cursor: 'pointer', padding: '2px', fontSize: '10px' }}>Edit</button>
+                            </div>
+                          </div>
+                          <div style={{
+                            fontFamily: '"Libre Baskerville", Georgia, serif',
+                            fontSize: '14px',
+                            lineHeight: 1.6,
+                            color: th.text,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {t.content}
+                          </div>
                         </div>
                       </div>
                     ))}

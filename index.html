@@ -751,30 +751,14 @@
         }
       };
 
-      const enterFullScreen = () => {
-        const el = document.documentElement;
-        // iOS doesn't support fullscreen API, just proceed
-        if (el.requestFullscreen) {
-          el.requestFullscreen().catch(() => {});
-        } else if (el.webkitRequestFullscreen) {
-          el.webkitRequestFullscreen();
-        }
-        // Scroll to hide address bar on mobile
-        window.scrollTo(0, 1);
-      };
-      
-      const exitFullScreen = () => {
-        if (document.fullscreenElement && document.exitFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        }
-      };
+      // Fullscreen API removed - causes layout issues on mobile
+      // App uses CSS to fill viewport naturally instead
+      const enterFullScreen = () => {};
+      const exitFullScreen = () => {};
 
       const begin = () => {
         setStarted(Date.now());
         if (goal.type === 'time') setTimeLeft(goal.value * 60);
-        enterFullScreen();
         setView('write');
         setTimeout(() => editorRef.current?.focus(), 80);
       };

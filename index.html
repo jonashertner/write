@@ -191,97 +191,175 @@
 
       const exportAsPdf = async (texts) => {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const pageHeight = doc.internal.pageSize.height;
-        const pageWidth = doc.internal.pageSize.width;
-        const margin = 20;
-        const lineHeight = 7;
-        let y = margin;
+        const doc = new jsPDF({
+          unit: 'pt',
+          format: 'letter'
+        });
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 72; // 1 inch margins
+        const contentWidth = pageWidth - margin * 2;
+        const lineHeight = 14;
+        const paragraphSpacing = 28;
+        let y = margin + 36;
         let pageNum = 1;
+        const totalPages = () => doc.internal.getNumberOfPages();
 
-        const addPageNumber = () => {
+        const addPageNumber = (num) => {
+          doc.setFont('times', 'normal');
           doc.setFontSize(10);
-          doc.setTextColor(150);
-          doc.text(String(pageNum), pageWidth / 2, pageHeight - 10, { align: 'center' });
-          doc.setTextColor(0);
-        };
-
-        const checkNewPage = () => {
-          if (y > pageHeight - margin - 20) {
-            addPageNumber();
-            doc.addPage();
-            pageNum++;
-            y = margin;
-          }
+          doc.setTextColor(140);
+          doc.text(String(num), pageWidth / 2, pageHeight - 40, { align: 'center' });
+          doc.setTextColor(40);
         };
 
         texts.forEach((t, i) => {
-          doc.setFontSize(12);
-          doc.setFont(undefined, 'bold');
-          const date = new Date(t.date).toLocaleDateString();
-          doc.text(`Entry ${i + 1} - ${date}`, margin, y);
-          y += lineHeight;
+          if (i > 0) {
+            doc.addPage();
+            pageNum++;
+            y = margin + 36;
+          }
           
-          doc.setFontSize(10);
-          doc.setFont(undefined, 'normal');
-          doc.setTextColor(100);
-          doc.text(`${t.wordCount} words`, margin, y);
-          doc.setTextColor(0);
-          y += lineHeight * 1.5;
-
-          doc.setFontSize(11);
-          const lines = doc.splitTextToSize(t.content, pageWidth - margin * 2);
-          lines.forEach(line => {
-            checkNewPage();
-            doc.text(line, margin, y);
-            y += lineHeight;
+          // Date header - small caps style
+          doc.setFont('times', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(120);
+          const date = new Date(t.date).toLocaleDateString('en-US', { 
+            year: 'numeric', month: 'long', day: 'numeric' 
           });
-          y += lineHeight * 2;
-          checkNewPage();
+          doc.text(date.toUpperCase(), margin, y);
+          y += 24;
+          
+          // Word count
+          doc.setFontSize(9);
+          doc.text(`${t.wordCount} words`, margin, y);
+          doc.setTextColor(40);
+          y += 48;
+
+          // Body text
+          doc.setFont('times', 'normal');
+          doc.setFontSize(12);
+          
+          const paragraphs = t.content.split('
+');
+          paragraphs.forEach((para, pIdx) => {
+            if (para.trim() === '') {
+              y += paragraphSpacing / 2;
+              return;
+            }
+            
+            const lines = doc.splitTextToSize(para, contentWidth);
+            lines.forEach((line, lIdx) => {
+              if (y > pageHeight - margin - 50) {
+                addPageNumber(pageNum);
+                doc.addPage();
+                pageNum++;
+                y = margin + 36;
+              }
+              doc.text(line, margin, y);
+              y += lineHeight * 1.8;
+            });
+            y += paragraphSpacing / 2;
+          });
+          
+          addPageNumber(pageNum);
         });
 
-        addPageNumber();
         doc.save(`writings-${new Date().toISOString().slice(0,10)}.pdf`);
       };
 
       const exportAsDocx = async (texts) => {
-        const { Document, Packer, Paragraph, TextRun, Footer, AlignmentType, PageNumber } = docx;
-        
-        const children = [];
-        texts.forEach((t, i) => {
-          const date = new Date(t.date).toLocaleDateString();
-          children.push(
-            new Paragraph({
-              children: [new TextRun({ text: `Entry ${i + 1} - ${date}`, bold: true, size: 28 })]
-            }),
-            new Paragraph({
-              children: [new TextRun({ text: `${t.wordCount} words`, size: 20, color: '666666' })]
-            }),
-            new Paragraph({ children: [] })
-          );
-          t.content.split('\n').forEach(para => {
-            children.push(new Paragraph({ children: [new TextRun({ text: para, size: 24 })] }));
-          });
-          children.push(new Paragraph({ children: [] }), new Paragraph({ children: [] }));
-        });
-
-        const doc = new Document({
-          sections: [{
-            properties: {},
-            footers: {
-              default: new Footer({
-                children: [new Paragraph({
-                  alignment: AlignmentType.CENTER,
-                  children: [new TextRun({ children: [PageNumber.CURRENT] })]
+        try {
+          const { Document, Packer, Paragraph, TextRun, Footer, AlignmentType, PageNumber, Header, Tab, TabStopType, TabStopPosition, convertInchesToTwip, LineRuleType, HeadingLevel } = docx;
+          
+          const children = [];
+          
+          texts.forEach((t, i) => {
+            const date = new Date(t.date).toLocaleDateString('en-US', { 
+              year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            
+            // Add page break between entries (except first)
+            if (i > 0) {
+              children.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+            }
+            
+            // Date header
+            children.push(new Paragraph({
+              spacing: { after: 120 },
+              children: [new TextRun({ 
+                text: date.toUpperCase(), 
+                size: 18,
+                color: '888888',
+                font: 'Times New Roman'
+              })]
+            }));
+            
+            // Word count
+            children.push(new Paragraph({
+              spacing: { after: 400 },
+              children: [new TextRun({ 
+                text: `${t.wordCount} words`, 
+                size: 18, 
+                color: '888888',
+                font: 'Times New Roman'
+              })]
+            }));
+            
+            // Body paragraphs
+            const paragraphs = t.content.split('
+');
+            paragraphs.forEach(para => {
+              children.push(new Paragraph({
+                spacing: { 
+                  line: 360,
+                  after: para.trim() === '' ? 200 : 160
+                },
+                children: [new TextRun({ 
+                  text: para || ' ',
+                  size: 24,
+                  font: 'Times New Roman'
                 })]
-              })
-            },
-            children
-          }]
-        });
+              }));
+            });
+          });
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `writings-${new Date().toISOString().slice(0,10)}.docx`);
+          const doc = new Document({
+            sections: [{
+              properties: {
+                page: {
+                  margin: {
+                    top: convertInchesToTwip(1),
+                    right: convertInchesToTwip(1),
+                    bottom: convertInchesToTwip(1),
+                    left: convertInchesToTwip(1)
+                  }
+                }
+              },
+              footers: {
+                default: new Footer({
+                  children: [new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new TextRun({ 
+                      children: [PageNumber.CURRENT],
+                      size: 20,
+                      color: '888888',
+                      font: 'Times New Roman'
+                    })]
+                  })]
+                })
+              },
+              children
+            }]
+          });
+
+          const blob = await Packer.toBlob(doc);
+          saveAs(blob, `writings-${new Date().toISOString().slice(0,10)}.docx`);
+        } catch (err) {
+          console.error('DOCX export error:', err);
+          alert('DOCX export failed. Try PDF or TXT instead.');
+        }
       };
 
       // Delete functions

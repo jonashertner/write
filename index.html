@@ -1098,7 +1098,7 @@
             <Notification />
             <style>{`::selection { background: ${th.accent}18; }`}</style>
 
-            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', minWidth: 0, margin: '0 auto', boxSizing: 'border-box', overflow: 'hidden' }}>
+            <div style={{ width: '100%', maxWidth: 'var(--max-width-done)', minWidth: 0, margin: '0 auto', boxSizing: 'border-box', overflow: 'hidden', padding: '0 8px' }}>
               <h1 style={{
                 fontFamily: '"Libre Baskerville", Georgia, serif',
                 fontSize: 'var(--title-size)',
@@ -1110,7 +1110,7 @@
                 Complete
               </h1>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--stats-gap)', marginBottom: 'var(--gap-large)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '16px' : 'var(--stats-gap)', marginBottom: 'var(--gap-large)', flexWrap: 'wrap', maxWidth: '100%' }}>
                 {[
                   { value: wordCount.toLocaleString(), label: 'Words' },
                   { value: text.length.toLocaleString(), label: 'Chars' },
@@ -1161,24 +1161,24 @@
                 {text || 'Nothing written.'}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', maxWidth: '100%' }}>
                 {[
                   { label: 'Copy', action: () => navigator.clipboard.writeText(text) },
                   { label: 'Keep', action: () => {
                     saveToLibrary(text, { wordCount, charCount: text.length, duration, wpm });
                     setView('library');
                   }},
-                  { label: 'New', primary: true, action: () => { 
-                    localStorage.removeItem('write_draft'); 
-                    setText(''); 
-                    setView('home'); 
+                  { label: 'New', primary: true, action: () => {
+                    localStorage.removeItem('write_draft');
+                    setText('');
+                    setView('home');
                     exitFullScreen();
                   }}
                 ].map((btn, i) => (
                   <button
                     key={i}
                     onClick={btn.action}
-                    style={btn.primary ? primaryButton : secondaryButton}
+                    style={{ ...(btn.primary ? primaryButton : secondaryButton), minWidth: 0 }}
                     onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
                     onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
@@ -1563,9 +1563,7 @@
             transition: 'opacity 0.4s ease',
             flexShrink: 0,
             boxSizing: 'border-box',
-            overflow: 'hidden',
-            minWidth: 0,
-            overflowX: 'hidden'
+            overflow: 'hidden'
           }}>
             <div style={{
               display: 'flex',

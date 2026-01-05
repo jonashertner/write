@@ -95,6 +95,9 @@
       const [sound, setSound] = useState(true);
       const [uiVisible, setUiVisible] = useState(true);
       const [lastSaved, setLastSaved] = useState(null);
+      const [savedTexts, setSavedTexts] = useState([]);
+      const [selectedTexts, setSelectedTexts] = useState([]);
+      const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
       
       const editorRef = useRef(null);
       const fadeTimer = useRef(null);

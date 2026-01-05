@@ -1601,14 +1601,29 @@
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setView('done')}
-                    style={{ ...ghostButton, padding: isMobile ? '8px 12px' : '10px 18px' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
-                  >
-                    Finish
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('write_draft');
+                        setText('');
+                        setView('home');
+                        exitFullScreen();
+                      }}
+                      style={{ ...ghostButton, padding: isMobile ? '8px 12px' : '10px 18px' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
+                    >
+                      Dismiss
+                    </button>
+                    <button
+                      onClick={() => setView('done')}
+                      style={{ ...ghostButton, padding: isMobile ? '8px 12px' : '10px 18px' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
+                    >
+                      Finish
+                    </button>
+                  </>
                 )}
               </div>
             </div>

@@ -205,7 +205,9 @@
       const [editingEntryId, setEditingEntryId] = useState(null);
       const [notification, setNotification] = useState(null);
       const [searchQuery, setSearchQuery] = useState('');
+      const [focusedIndex, setFocusedIndex] = useState(-1);
       const touchStart = useRef({});
+      const fileInputRef = useRef(null);
 
       // Safe localStorage helper with quota handling
       const safeStorage = {
@@ -481,6 +483,57 @@
         }
       };
 
+      // JSON export/import for backup
+      const exportAsJson = () => {
+        try {
+          const data = {
+            version: 1,
+            exportDate: new Date().toISOString(),
+            theme,
+            goal,
+            texts: savedTexts
+          };
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/\//g, '-');
+          a.download = `write-backup-${new Date().toISOString().slice(0,19).replace(/[T:]/g, '-')}-${tz}.json`;
+          a.click();
+          setNotification({ type: 'success', message: 'Backup exported as JSON' });
+        } catch (e) {
+          setNotification({ type: 'error', message: 'JSON export failed' });
+        }
+      };
+
+      const importFromJson = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const data = JSON.parse(evt.target.result);
+            if (!data.texts || !Array.isArray(data.texts)) {
+              setNotification({ type: 'error', message: 'Invalid backup file format' });
+              return;
+            }
+            // Merge imported texts with existing, avoiding duplicates by ID
+            const existingIds = new Set(savedTexts.map(t => t.id));
+            const newTexts = data.texts.filter(t => !existingIds.has(t.id));
+            const merged = [...savedTexts, ...newTexts].sort((a, b) => new Date(b.date) - new Date(a.date));
+            setSavedTexts(merged);
+            safeStorage.set('write_saved_texts', merged);
+            setNotification({
+              type: 'success',
+              message: `Imported ${newTexts.length} new ${newTexts.length === 1 ? 'entry' : 'entries'}${newTexts.length < data.texts.length ? ` (${data.texts.length - newTexts.length} duplicates skipped)` : ''}`
+            });
+          } catch (err) {
+            setNotification({ type: 'error', message: 'Failed to parse backup file' });
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = ''; // Reset input for repeated imports
+      };
+
       // Delete functions
       const deleteSelected = () => {
         const updated = savedTexts.filter(t => !selectedTexts.includes(t.id));
@@ -746,6 +799,45 @@
           setView('done');
         }
       }, [wordCount, text.length, goal, view, editingEntryId]);
+
+      // Keyboard navigation in library
+      useEffect(() => {
+        if (view !== 'library') {
+          setFocusedIndex(-1);
+          return;
+        }
+        const handleKeyDown = (e) => {
+          const list = sortedTexts;
+          if (!list.length) return;
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setFocusedIndex(prev => Math.min(prev + 1, list.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setFocusedIndex(prev => Math.max(prev - 1, 0));
+          } else if (e.key === 'Enter' && focusedIndex >= 0) {
+            e.preventDefault();
+            startEdit(list[focusedIndex]);
+          } else if (e.key === ' ' && focusedIndex >= 0) {
+            e.preventDefault();
+            toggleSelect(list[focusedIndex].id);
+          } else if (e.key === 'Escape') {
+            setFocusedIndex(-1);
+          } else if (e.key === 'p' && focusedIndex >= 0) {
+            e.preventDefault();
+            togglePin(list[focusedIndex].id);
+          } else if (e.key === 'Delete' && focusedIndex >= 0) {
+            e.preventDefault();
+            if (confirm('Delete this entry?')) {
+              deleteEntry(list[focusedIndex].id);
+              setFocusedIndex(prev => Math.min(prev, list.length - 2));
+            }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [view, sortedTexts, focusedIndex]);
 
       const showUI = useCallback(() => {
         setUiVisible(true);
@@ -1285,7 +1377,7 @@
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 'var(--gap-medium)' }}>
-                    {sortedTexts.map(t => (
+                    {sortedTexts.map((t, idx) => (
                       <div key={t.id} style={{ position: 'relative', overflow: 'hidden', borderRadius: '8px' }}>
                         {/* Swipe action indicators */}
                         <div style={{
@@ -1315,15 +1407,16 @@
                           onClick={() => Math.abs(swipeState[t.id] || 0) < 10 && toggleSelect(t.id)}
                           onDoubleClick={() => startEdit(t)}
                           style={{
-                            border: `1px solid ${selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
+                            border: `${focusedIndex === idx ? '2px' : '1px'} solid ${focusedIndex === idx ? th.accent : selectedTexts.includes(t.id) ? th.text : t.pinned ? th.accent : th.subtle}`,
                             borderRadius: '8px',
-                            padding: '16px',
+                            padding: focusedIndex === idx ? '15px' : '16px',
                             cursor: 'pointer',
-                            transition: swipeState[t.id] ? 'none' : 'transform 0.2s, border-color 0.2s',
+                            transition: swipeState[t.id] ? 'none' : 'transform 0.2s, border-color 0.2s, border-width 0.1s, padding 0.1s',
                             transform: `translateX(${swipeState[t.id] || 0}px)`,
-                            background: th.bg,
+                            background: focusedIndex === idx ? (th.bg === '#ffffff' ? '#f8f8f8' : th.bg === '#1a1a1a' ? '#222' : th.bg === '#faf8f5' ? '#f5f3f0' : th.bg) : th.bg,
                             position: 'relative',
-                            userSelect: 'none'
+                            userSelect: 'none',
+                            outline: 'none'
                           }}
                         >
                           <div style={{
@@ -1391,6 +1484,30 @@
                       <button onClick={() => exportAsTxt(textsToExport)} style={secondaryButton}>TXT</button>
                       <button onClick={() => exportAsPdf(textsToExport)} style={secondaryButton}>PDF</button>
                       <button onClick={() => exportAsDocx(textsToExport)} style={secondaryButton}>DOCX</button>
+                    </div>
+
+                    <div style={{
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: th.muted,
+                      marginTop: '8px',
+                      marginBottom: '4px'
+                    }}>
+                      Backup
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button onClick={exportAsJson} style={secondaryButton}>Export JSON</button>
+                      <button onClick={() => fileInputRef.current?.click()} style={secondaryButton}>Import JSON</button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        onChange={importFromJson}
+                        style={{ display: 'none' }}
+                      />
                     </div>
 
                     <div style={{

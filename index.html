@@ -875,15 +875,7 @@
 
       const onKeyDown = (e) => {
         showUI();
-        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-          e.preventDefault();
-          if (text.trim()) {
-            const duration = started ? Math.floor((Date.now() - started) / 1000) : 0;
-            const minutes = duration / 60;
-            const wpm = minutes > 0 ? Math.round(wordCount / minutes) : 0;
-            saveToLibrary(text, { wordCount, charCount: text.length, duration, wpm });
-          }
-        } else if (e.key === 'Enter') {
+        if (e.key === 'Enter') {
           playSound('return');
         } else if (e.key === ' ' || e.key === 'Backspace') {
           playSound('space');
@@ -1443,14 +1435,31 @@
                   <p style={{ fontFamily: '"Libre Baskerville", Georgia, serif', fontStyle: 'italic', marginBottom: 'var(--gap-medium)' }}>
                     No saved writings yet
                   </p>
-                  <button
-                    onClick={begin}
-                    style={primaryButton}
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                  >
-                    Start Writing
-                  </button>
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={begin}
+                      style={primaryButton}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                      Start Writing
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      style={secondaryButton}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                      Import Backup
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json"
+                      onChange={importFromJson}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <>
@@ -1816,7 +1825,6 @@
             }}>
               <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {editingEntryId ? 'Editing' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '\u00A0'}
-                {!isMobile && !editingEntryId && <span style={{ opacity: 0.6, marginLeft: '12px' }}>⌘↵ to finish</span>}
               </span>
               <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                 {editingEntryId ? (

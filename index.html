@@ -578,6 +578,17 @@
 
       const saveEditedEntry = () => {
         if (!editingEntryId) return;
+
+        // Check if edited content duplicates another entry (not the one being edited)
+        const normalizedContent = text.trim();
+        const existingDuplicate = savedTexts.find(t =>
+          t.id !== editingEntryId && t.content.trim() === normalizedContent
+        );
+        if (existingDuplicate) {
+          setNotification({ type: 'error', message: 'Another entry with this content already exists' });
+          return;
+        }
+
         const originalEntry = savedTexts.find(t => t.id === editingEntryId);
         const hasChanged = originalEntry && originalEntry.content !== text;
         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -595,10 +606,17 @@
         setText('');
         localStorage.removeItem('write_draft');
         setView('library');
+        if (hasChanged) {
+          setNotification({ type: 'success', message: 'Entry updated' });
+        }
       };
 
       const cancelEdit = () => {
-        // Auto-save already handled by useEffect
+        const originalEntry = savedTexts.find(t => t.id === editingEntryId);
+        const hasChanged = originalEntry && originalEntry.content !== text;
+        if (hasChanged && !confirm('Discard changes to this entry?')) {
+          return;
+        }
         setEditingEntryId(null);
         setText('');
         localStorage.removeItem('write_draft');
@@ -1329,7 +1347,7 @@
                     if (saved) {
                       setNotification({ type: 'success', message: 'Saved to library' });
                       setText('');
-                      setView('home');
+                      setView('library');
                       exitFullScreen();
                     }
                   }}
@@ -1340,6 +1358,27 @@
                   Save
                 </button>
               </div>
+
+              {savedTexts.length > 0 && (
+                <div style={{ textAlign: 'center', marginTop: 'var(--gap-small)' }}>
+                  <button
+                    onClick={() => setView('library')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '10px',
+                      color: th.muted,
+                      cursor: 'pointer',
+                      padding: '8px',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '2px'
+                    }}
+                  >
+                    View Library ({savedTexts.length})
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -1806,10 +1845,12 @@
                   <>
                     <button
                       onClick={() => {
-                        localStorage.removeItem('write_draft');
-                        setText('');
-                        setView('home');
-                        exitFullScreen();
+                        if (!text.trim() || confirm('Discard this writing?')) {
+                          localStorage.removeItem('write_draft');
+                          setText('');
+                          setView('home');
+                          exitFullScreen();
+                        }
                       }}
                       style={{ ...ghostButton, padding: isMobile ? '8px 12px' : '10px 18px' }}
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}

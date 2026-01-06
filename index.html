@@ -1321,21 +1321,6 @@
                 </button>
                 <button
                   onClick={() => {
-                    if (confirm('Discard this writing without saving?')) {
-                      localStorage.removeItem('write_draft');
-                      setText('');
-                      setView('library');
-                      exitFullScreen();
-                    }
-                  }}
-                  style={{ ...secondaryButton, minWidth: 0 }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                >
-                  Discard
-                </button>
-                <button
-                  onClick={() => {
                     const saved = saveToLibrary(text, { wordCount, charCount: text.length, duration, wpm });
                     if (saved) {
                       setNotification({ type: 'success', message: 'Saved to library' });
@@ -1348,7 +1333,22 @@
                   onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
-                  Save
+                  Keep
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('Discard this writing without saving?')) {
+                      localStorage.removeItem('write_draft');
+                      setText('');
+                      setView('library');
+                      exitFullScreen();
+                    }
+                  }}
+                  style={{ ...secondaryButton, minWidth: 0 }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                >
+                  Discard
                 </button>
               </div>
             </div>

@@ -1184,23 +1184,21 @@
                 </button>
               </div>
 
-              {savedTexts.length > 0 && (
-                <div style={{ textAlign: 'center', marginTop: 'var(--gap-small)' }}>
-                  <button
-                    onClick={() => setView('library')}
-                    style={{
-                      ...buttonBase,
-                      background: 'transparent',
-                      border: 'none',
-                      color: th.muted,
-                      padding: '8px 16px',
-                      fontSize: '10px'
-                    }}
-                  >
-                    Library ({savedTexts.length})
-                  </button>
-                </div>
-              )}
+              <div style={{ textAlign: 'center', marginTop: 'var(--gap-small)' }}>
+                <button
+                  onClick={() => setView('library')}
+                  style={{
+                    ...buttonBase,
+                    background: 'transparent',
+                    border: 'none',
+                    color: th.muted,
+                    padding: '8px 16px',
+                    fontSize: '10px'
+                  }}
+                >
+                  Library{savedTexts.length > 0 ? ` (${savedTexts.length})` : ''}
+                </button>
+              </div>
 
               <div style={{
                 position: 'fixed',

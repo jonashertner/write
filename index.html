@@ -33,7 +33,7 @@
       width: 100%;
       overflow: hidden;
       overscroll-behavior: none;
-      background: #FFF1E5;
+      background: #FFFFFF;
       touch-action: pan-y;
     }
     body {
@@ -44,7 +44,7 @@
       padding: 0;
       overflow: hidden;
       overscroll-behavior: none;
-      background: inherit;
+      background: #FFFFFF;
       touch-action: pan-y;
     }
     #root {
@@ -56,7 +56,7 @@
       width: 100%;
       max-width: 100vw;
       overflow: hidden;
-      background: inherit;
+      background: transparent;
       touch-action: pan-y;
       /* Safe area insets */
       padding-top: env(safe-area-inset-top, 0px);
@@ -715,9 +715,12 @@
 
       const th = themes[theme];
 
-      // Update html background when theme changes to prevent white gaps
+      // Update html/body background and meta theme-color when theme changes
       useEffect(() => {
         document.documentElement.style.background = th.bg;
+        document.body.style.background = th.bg;
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', th.bg);
       }, [th.bg]);
       const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 

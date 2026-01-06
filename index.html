@@ -578,6 +578,17 @@
 
       const saveEditedEntry = () => {
         if (!editingEntryId) return;
+
+        // Check if edited content duplicates another entry (not the one being edited)
+        const normalizedContent = text.trim();
+        const existingDuplicate = savedTexts.find(t =>
+          t.id !== editingEntryId && t.content.trim() === normalizedContent
+        );
+        if (existingDuplicate) {
+          setNotification({ type: 'error', message: 'Another entry with this content already exists' });
+          return;
+        }
+
         const originalEntry = savedTexts.find(t => t.id === editingEntryId);
         const hasChanged = originalEntry && originalEntry.content !== text;
         const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -595,10 +606,17 @@
         setText('');
         localStorage.removeItem('write_draft');
         setView('library');
+        if (hasChanged) {
+          setNotification({ type: 'success', message: 'Entry updated' });
+        }
       };
 
       const cancelEdit = () => {
-        // Auto-save already handled by useEffect
+        const originalEntry = savedTexts.find(t => t.id === editingEntryId);
+        const hasChanged = originalEntry && originalEntry.content !== text;
+        if (hasChanged && !confirm('Discard changes to this entry?')) {
+          return;
+        }
         setEditingEntryId(null);
         setText('');
         localStorage.removeItem('write_draft');
@@ -1313,7 +1331,7 @@
                     if (confirm('Discard this writing without saving?')) {
                       localStorage.removeItem('write_draft');
                       setText('');
-                      setView('home');
+                      setView('library');
                       exitFullScreen();
                     }
                   }}
@@ -1329,7 +1347,7 @@
                     if (saved) {
                       setNotification({ type: 'success', message: 'Saved to library' });
                       setText('');
-                      setView('home');
+                      setView('library');
                       exitFullScreen();
                     }
                   }}
@@ -1376,18 +1394,28 @@
                 }}>
                   Library
                 </h1>
-                <button
-                  onClick={() => setView('home')}
-                  style={{
-                    ...buttonBase,
-                    background: 'transparent',
-                    border: `1px solid ${th.subtle}`,
-                    color: th.muted,
-                    padding: '8px 16px'
-                  }}
-                >
-                  Back
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setView('home')}
+                    style={{
+                      ...buttonBase,
+                      background: 'transparent',
+                      border: `1px solid ${th.subtle}`,
+                      color: th.muted,
+                      padding: '8px 16px'
+                    }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={begin}
+                    style={{ ...primaryButton, padding: '8px 16px' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  >
+                    Write
+                  </button>
+                </div>
               </div>
 
               {savedTexts.length > 3 && (
@@ -1414,9 +1442,17 @@
 
               {savedTexts.length === 0 ? (
                 <div style={{ textAlign: 'center', color: th.muted, padding: 'var(--gap-large) 0' }}>
-                  <p style={{ fontFamily: '"Libre Baskerville", Georgia, serif', fontStyle: 'italic' }}>
+                  <p style={{ fontFamily: '"Libre Baskerville", Georgia, serif', fontStyle: 'italic', marginBottom: 'var(--gap-medium)' }}>
                     No saved writings yet
                   </p>
+                  <button
+                    onClick={begin}
+                    style={primaryButton}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  >
+                    Start Writing
+                  </button>
                 </div>
               ) : (
                 <>
@@ -1803,29 +1839,14 @@
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem('write_draft');
-                        setText('');
-                        setView('home');
-                        exitFullScreen();
-                      }}
-                      style={{ ...ghostButton, padding: isMobile ? '8px 12px' : '10px 18px' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
-                    >
-                      Dismiss
-                    </button>
-                    <button
-                      onClick={() => setView('done')}
-                      style={{ ...ghostButton, padding: isMobile ? '8px 12px' : '10px 18px' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = th.text; e.currentTarget.style.color = th.text; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = th.subtle; e.currentTarget.style.color = th.muted; }}
-                    >
-                      Finish
-                    </button>
-                  </>
+                  <button
+                    onClick={() => setView('done')}
+                    style={{ ...primaryButton, padding: isMobile ? '8px 12px' : 'var(--button-padding)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  >
+                    Finish
+                  </button>
                 )}
               </div>
             </div>
